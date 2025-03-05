@@ -1,4 +1,5 @@
-#pragma once
+#ifndef MUIPP_TPL_HPP
+#define MUIPP_TPL_HPP
 #include <string_view>
 
 using muiItemId = uint32_t;
@@ -7,7 +8,7 @@ namespace muipp {
 
 // Unary predicate for Mui's label search matching
 template <class T>
-class MatchLabel : public std::unary_function<T, bool>{
+class MatchLabel {
   std::string_view _lookup;
 public:
   explicit MatchLabel(const char* label) : _lookup(label) {}
@@ -19,7 +20,7 @@ public:
 
 // Unary predicate for Mui's ID search matching
 template <class T>
-class MatchID : public std::unary_function<T, bool>{
+class MatchID {
   muiItemId _id;
 public:
   explicit MatchID(muiItemId id) : _id(id) {}
@@ -31,7 +32,7 @@ public:
 
 // Unary predicate for Mui's ID search matching
 template <class T>
-class MatchPageID : public std::unary_function<T, bool>{
+class MatchPageID {
   muiItemId _id;
 public:
   explicit MatchPageID(muiItemId id) : _id(id) {}
@@ -47,7 +48,5 @@ T clamp(T value, T min, T max){
   return (value < min)? min : (value > max)? max : value;
 }
 
-
-
-
 } // end of namespace muipp
+#endif

@@ -1,6 +1,10 @@
-#pragma once
-#include "U8g2lib.h"
+#ifndef MUIPP_U8G2_HPP
+#define MUIPP_U8G2_HPP
+
+#include <u8g2.h> // Use the U8g2 library for Pico SDK
 #include "muiplusplus.hpp"
+#include <functional>
+#include <string>
 
 
 // callback function that returns index size
@@ -29,7 +33,7 @@ enum class text_align_t {
 
 class Item_U8g2_Generic {
 protected:
-  U8G2 &_u8g2;
+  u8g2_t &_u8g2;
   const uint8_t* _font;
   // item's initial cursor position
   u8g2_uint_t _x, _y;
@@ -49,7 +53,7 @@ public:
    * @param font use font for printing, if null, then do not switch font
    * @param x, y Coordinates of the top left corner to start printing
    */
-  Item_U8g2_Generic(U8G2 &u8g2, const uint8_t* font = nullptr, u8g2_uint_t x = 0, u8g2_uint_t y = 0, text_align_t halign = text_align_t::left, text_align_t valign = text_align_t::baseline) : _u8g2(u8g2), _font(font), _x(x), _y(y), h_align(halign), v_align(valign) {};
+  Item_U8g2_Generic(u8g2_t &u8g2, const uint8_t* font = nullptr, u8g2_uint_t x = 0, u8g2_uint_t y = 0, text_align_t halign = text_align_t::left, text_align_t valign = text_align_t::baseline) : _u8g2(u8g2), _font(font), _x(x), _y(y), h_align(halign), v_align(valign) {};
 
   u8g2_uint_t getX() const { return _x; }
 
@@ -101,7 +105,7 @@ public:
    * @param font use font for printing, if null, then do not switch font
    * @param x, y Coordinates of the top left corner to start printing
    */
-  MuiItem_U8g2_PageTitle(U8G2 &u8g2, muiItemId id, const uint8_t* font = nullptr, u8g2_uint_t x = 0, u8g2_uint_t y = 0)
+  MuiItem_U8g2_PageTitle(u8g2_t &u8g2, muiItemId id, const uint8_t* font = nullptr, u8g2_uint_t x = 0, u8g2_uint_t y = 0)
     : Item_U8g2_Generic(u8g2, font, x, y),
       MuiItem_Uncontrollable(id, nullptr) { v_align = text_align_t::top; };
 
@@ -120,7 +124,7 @@ public:
    * @param font use font for printing, if null, then do not switch font
    * @param x, y Coordinates of the top left corner to start printing
    */
-  MuiItem_U8g2_StaticText(U8G2 &u8g2, muiItemId id, const char* txt, const uint8_t* font = nullptr, u8g2_uint_t x = 0, u8g2_uint_t y = 0)
+  MuiItem_U8g2_StaticText(u8g2_t &u8g2, muiItemId id, const char* txt, const uint8_t* font = nullptr, u8g2_uint_t x = 0, u8g2_uint_t y = 0)
     : Item_U8g2_Generic(u8g2, font, x, y),
       MuiItem_Uncontrollable(id, txt) {};
 
@@ -139,7 +143,7 @@ public:
    * @param font use font for printing, if null, then do not switch font
    * @param x, y Coordinates of the top left corner to start printing
    */
-  MuiItem_U8g2_TextCallBack(U8G2 &u8g2, muiItemId id, string_cb_t callback,
+  MuiItem_U8g2_TextCallBack(u8g2_t &u8g2, muiItemId id, string_cb_t callback,
       const uint8_t* font = nullptr, u8g2_uint_t x = 0, u8g2_uint_t y = 0,
       text_align_t halign = text_align_t::left,
       text_align_t valign = text_align_t::baseline)
@@ -161,7 +165,7 @@ protected:
   mui_event _action;
 public:
   MuiItem_U8g2_ActionButton(
-    U8G2 &u8g2, muiItemId id,
+    u8g2_t &u8g2, muiItemId id,
     mui_event onAction,                                                           // button action
     const char* lbl,                                                              // button label
     const uint8_t* font = nullptr, u8g2_uint_t x = 0, u8g2_uint_t y = 0,          // look and position
@@ -185,8 +189,8 @@ public:
  */
 class MuiItem_U8g2_BackButton : public MuiItem_U8g2_ActionButton {
 public:
-  MuiItem_U8g2_BackButton(U8G2 &u8g2, muiItemId id, const char* lbl, const uint8_t* font = nullptr)
-    : MuiItem_U8g2_ActionButton(u8g2, id, {mui_event_t::prevPage}, lbl, font, u8g2.getDisplayWidth(), u8g2.getDisplayHeight(), text_align_t::right, text_align_t::bottom) {};
+  MuiItem_U8g2_BackButton(u8g2_t &u8g2, muiItemId id, const char* lbl, const uint8_t* font = nullptr)
+    : MuiItem_U8g2_ActionButton(u8g2, id, {mui_event_t::prevPage}, lbl, font, u8g2_GetDisplayWidth(&u8g2), u8g2_GetDisplayHeight(&u8g2), text_align_t::right, text_align_t::bottom) {};
 };
 
 
@@ -238,7 +242,7 @@ public:
    * @param font2 font to use for other rows, same as font1 if null
    * @param x, y Coordinates of the top left corner to start printing
    */
-  MuiItem_U8g2_DynamicScrollList(U8G2 &u8g2,
+  MuiItem_U8g2_DynamicScrollList(u8g2_t &u8g2,
       muiItemId id,
       stringbyindex_cb_t label_cb,
       size_cb_t count,
@@ -279,7 +283,7 @@ public:
    * @param font use font for printing, if null, then do not switch font
    * @param x, y Coordinates of the top left corner to start printing
    */
-  MuiItem_U8g2_CheckBox(U8G2 &u8g2, muiItemId id, const char* label, bool value, index_cb_t action_cb = nullptr, const uint8_t* font = nullptr, u8g2_uint_t x = 0, u8g2_uint_t y = 0)
+  MuiItem_U8g2_CheckBox(u8g2_t &u8g2, muiItemId id, const char* label, bool value, index_cb_t action_cb = nullptr, const uint8_t* font = nullptr, u8g2_uint_t x = 0, u8g2_uint_t y = 0)
     : Item_U8g2_Generic(u8g2, font, x, y),
       MuiItem(id, label, {false, false}),_v(value), _action(action_cb){}
 
@@ -325,7 +329,7 @@ public:
    * @param y 
    */
   MuiItem_U8g2_NumberHSlide(
-    U8G2 &u8g2,
+    u8g2_t &u8g2,
     muiItemId id,
     const char* label,
     T& value,
@@ -365,7 +369,7 @@ class MuiItem_U8g2_ValuesList : public Item_U8g2_Generic, public MuiItem {
 public:
 
   MuiItem_U8g2_ValuesList(
-    U8G2 &u8g2,
+    u8g2_t &u8g2,
     muiItemId id,
     const char* label,
     string_cb_t getCurrent,
@@ -393,37 +397,37 @@ public:
 // ***********************************
 template <typename T>
 void MuiItem_U8g2_NumberHSlide<T>::render(const MuiItem* parent){
-  _u8g2.setFontPosCenter();
+  u8g2_SetFontPosCenter(&_u8g2);
   std::string val_str(_mkstring ? _mkstring(_v) : std::to_string(_v) );
   if (_font)
-    _u8g2.setFont(_font);
-  auto vlen = _u8g2.getStrWidth(val_str.data());
+    u8g2_SetFont(&_u8g2, _font);
+  auto vlen = u8g2_GetStrWidth(&_u8g2, val_str.data());
 
   // check if prev value step is valid, then print it
   if ( (_minv != _maxv) && ((_v - _step) >= _minv) ){
     if (_font2)
-      _u8g2.setFont(_font2);
+      u8g2_SetFont(&_u8g2, _font2);
 
     std::string pval_str(_mkstring ? _mkstring(_v - _step) : std::to_string(_v - _step));
-    auto prevx = _x - vlen/2 - _offset - _u8g2.getStrWidth(pval_str.data());
-    _u8g2.setCursor(prevx, _y);
-    _u8g2.print(pval_str.data());
+    auto prevx = _x - vlen/2 - _offset - u8g2_GetStrWidth(&_u8g2, pval_str.data());
+    u8g2_DrawStr(&_u8g2, prevx, _y, pval_str.data());
   }
 
   // print value string
   if (_font)
-    _u8g2.setFont(_font);
+    u8g2_SetFont(&_u8g2, _font);
 
-  _u8g2.drawButtonUTF8(_x - vlen/2, _y, U8G2_BTN_INV, 0, 1, 1, val_str.data());
+  u8g2_DrawButtonUTF8(&_u8g2, _x - vlen/2, _y, U8G2_BTN_INV, 0, 1, 1, val_str.data());
 
 
   // check if next value step is valid, then print it
   if ( (_minv != _maxv) && (_v + _step <= _maxv)){
     if (_font2)
-      _u8g2.setFont(_font2);
-    _u8g2.setCursor(_x + vlen/2 + _offset, _y);
+      u8g2_SetFont(&_u8g2, _font2);
+    
     std::string nval_str( _mkstring ? _mkstring(_v + _step) : std::to_string(_v + _step));
-    _u8g2.print(nval_str.data());
+    u8g2_DrawStr(&_u8g2, _x + vlen/2 + _offset, _y, nval_str.data());
+   
   }
 }
 
@@ -459,3 +463,4 @@ mui_event MuiItem_U8g2_NumberHSlide<T>::muiEvent(mui_event e){
   // no-op
   return {};
 }
+#endif

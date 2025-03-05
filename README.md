@@ -1,6 +1,47 @@
-# MuiPlusPlus library
+# MuiPlusPlus library *PICO C++ SDK*
 
 On-Screen Menu navigation and UI controls library for 32 bit MCUs.
+
+**Pico SDK:** _Mathew Winters_.
+
+## Installation - CMakeLists.txt
+
+In your project, create or add to a `libraries.cmake` or similar file, and add to it:
+
+```
+cmake_minimum_required(VERSION 3.28)
+function (includeLibraries)
+
+include(FetchContent)
+
+FetchContent_Declare(
+  MuiPlusPlus
+  GIT_REPOSITORY    https://github.com/mwinters-stuff/pico-MuiPlusPlus.git
+  GIT_TAG           main
+  GIT_SHALLOW       1
+  SOURCE_SUBDIR     cmake
+)
+
+FetchContent_MakeAvailable(MuiPlusPlus)
+
+
+endfunction()
+
+```
+
+If you are adding to a similar file you might only need the `FetchContent_Declare` and `FetchContent_MakeAvailable`.
+
+
+Now add to your main `CMakeLists.txt` after `pico_sdk_init()`:
+```
+include(libraries.cmake)
+includeLibraries()
+
+```
+
+Then add to `target_link_libraries` the library `MuiPlusPlus`.
+
+## MuiPlusPlus
 
 
 `MuiPlusPlus` is "Minimalistic UI on C Plus Plus". It all started with [MUI](https://github.com/olikraus/u8g2/wiki/muimanual#mui) - a really really nice minimalistic UI lib on top of [u8g2](https://github.com/olikraus/u8g2) by [olikraus](https://github.com/olikraus).

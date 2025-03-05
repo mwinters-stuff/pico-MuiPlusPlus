@@ -1,13 +1,13 @@
-#pragma once
+#ifndef MUIPP_HPP
+#define MUIPP_HPP
 
 #include <list>
 #include <memory>
 #include <vector>
 #include "muipp_tpl.hpp"
-//#include <string_view>
-//#include "clib/mui.h"
-//#include "clib/mui_u8g2.h"
-#include "Arduino.h"
+#include <cstdio>
+#include <functional>
+#include <algorithm> // Add this include
 
 #define MAX_NESTED_EVENTS 5
 
@@ -127,7 +127,7 @@ public:
 
 
   MuiItem(muiItemId id, const char* name = nullptr, item_opts options = item_opts()) : id(id), name(name), opt(options) {};
-  virtual ~MuiItem(){ Serial.printf("MuiItem d-tor, id:%u\n", id); };
+  virtual ~MuiItem(){ printf("MuiItem d-tor, id:%u\n", id); };
 
   const char* getName() const { return name; };
 
@@ -246,7 +246,7 @@ class MuiPlusPlus {
    * @brief find item byt it's id
    * 
    * @param id 
-   * @return std::list<MuiItem_pt>::iterator 
+   * @return std::list<MuiPage>::iterator 
    */
   std::list<MuiPage>::iterator _page_by_label(const char* label){ return std::find_if(pages.begin(), pages.end(), muipp::MatchLabel<MuiPage>(label)); }
 
@@ -385,3 +385,4 @@ private:
 };
 
 
+#endif

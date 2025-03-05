@@ -19,24 +19,25 @@
  */
 
 #pragma once
-#include "espasyncbutton.hpp"
+#include "hardware/gpio.h"
+#include "hardware/irq.h"
 #include "muipp_u8g2.hpp"
 #include "literals.h"
+#include <Versatile_RotaryEncoder.h>
+#include <u8g2.h>
+#include <memory>
+#include <string>
 
 
 /*
     this class controls our buttons and
-    switch display information between some regural jobs and Configuration menu.
-    It's nearly same funtionality as in previous example, just wrapped into class object
-
+    switch display information between some regular jobs and Configuration menu.
+    It's nearly same functionality as in previous example, just wrapped into class object
 */
 class DisplayControls {
-  // "OK" action button object
-  GPIOButton<ESPEventPolicy> _btn;
-
-  // Two button pseudo-encoder object is responsible for inr/decr buttons handling
-  PseudoRotaryEncoder _encdr;
-
+private:
+  Versatile_RotaryEncoder encoder;
+  u8g2_t u8g2;
   // screen refresh required flag
   bool _rr{true};
 
@@ -46,52 +47,27 @@ class DisplayControls {
   // a placeholder for our MuiPlusPlus menu object, initially empty
   std::unique_ptr<MuiPlusPlus> _menu;
 
-  // action button event handler, we will initialize it upon DisplayControls's instance creation to attach gpio button with events 
-  esp_event_handler_instance_t _evt_btn_handler{nullptr};
-
-  // encoder event handler
-  esp_event_handler_instance_t _evt_enc_handler{nullptr};
-
-  /**
-   * @brief this method will dispatch events from "OK" button and virtual encoder
-   * and forward it to the respective handlers. The thing is that buttons could
-   * behave differently depending on which derived menu class is loaded.
-   * Won't need it in this example, but maybe used later on in other examples
-   * 
-   * @param arg ESP Evenloop argument
-   * @param base ESP Event loop base
-   * @param id event id
-   * @param event_data event data pointer
-   */
-  static void _event_picker(void* arg, esp_event_base_t base, int32_t id, void* event_data);
-
-  /**
-   * @brief button events handler
-   * 
-   * @param e 
-   * @param m 
-   */
-  void _evt_button(ESPButton::event_t e, const EventMsg* m);
-  // encoder events handler
-  void _evt_encoder(ESPButton::event_t e, const EventMsg* m);
-
   /**
    * @brief this method I'll call when my "enter" button is pressed and I need to pass "enter"
-   * event to menu and receive reply event from menu to uderstand when menu has exited
+   * event to menu and receive reply event from menu to understand when menu has exited
    * 
    */
   void _menu_ok_action();
 
   /**
    * @brief this method I'll call when my "+/-" buttons are pressed and I need to pass "cursor"
-   * event to menu and receive reply event from menu to uderstand when menu has exited
+   * event to menu and receive reply event from menu to understand when menu has exited
    * 
    */
-  void _menu_encoder_action(const EventMsg* m);
+  void _menu_encoder_action(int8_t rotation);
 
   // menu builder function
   void _buildMenu();
 
+  // Rotary encoder callbacks
+  void handleRotate(int8_t rotation);
+  void handlePressRelease();
+  void handleLongPressRelease();
 public:
   // constructor
   DisplayControls();
@@ -102,8 +78,7 @@ public:
   // start our display control
   void begin();
 
-  // draw something on screen, either some sily stub text, or render menu
+  // draw something on screen, either some silly stub text, or render menu
   void drawScreen();
-
 };
 

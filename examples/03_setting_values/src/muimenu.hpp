@@ -19,11 +19,10 @@
  */
 
 #pragma once
-#include "espasyncbutton.hpp"
+
 #include "muipp_u8g2.hpp"
 #include "literals.h"
-
-
+#include <Versatile_RotaryEncoder.h>
 
 // forward declaration for MuiMenu class
 class MuiMenu;
@@ -35,11 +34,11 @@ class MuiMenu;
 
 */
 class DisplayControls {
-  // action button object
-  GPIOButton<ESPEventPolicy> _btn;
+
+  u8g2_t u8g2;
 
   // Two button pseudo-encoder object
-  PseudoRotaryEncoder _encdr;
+  Versatile_RotaryEncoder encoder;
 
   // screen refresh required flag
   bool _rr{true};
@@ -49,12 +48,6 @@ class DisplayControls {
 
   // a placeholder for our menu object, initially empty
   std::unique_ptr<MuiMenu> _menu;
-
-  // action button event handler
-  esp_event_handler_instance_t _evt_btn_handler{nullptr};
-
-  // encoder event handler
-  esp_event_handler_instance_t _evt_enc_handler{nullptr};
 
   /**
    * @brief this method will dispatch events from OK button and virtual encoder
@@ -67,7 +60,7 @@ class DisplayControls {
    * @param id event id
    * @param event_data event data pointer
    */
-  static void _event_picker(void* arg, esp_event_base_t base, int32_t id, void* event_data);
+  // void _event_picker(void* arg, esp_event_base_t base, int32_t id, void* event_data);
 
   /**
    * @brief button events handler
@@ -75,9 +68,9 @@ class DisplayControls {
    * @param e 
    * @param m 
    */
-  void _evt_button(ESPButton::event_t e, const EventMsg* m);
-  // encoder events handler
-  void _evt_encoder(ESPButton::event_t e, const EventMsg* m);
+  // void _evt_button(ESPButton::event_t e, const EventMsg* m);
+  // // encoder events handler
+  // void _evt_encoder(ESPButton::event_t e, const EventMsg* m);
 
   /**
    * @brief this method I'll call when my "enter" button is pressed and I need to pass "enter"
@@ -91,8 +84,12 @@ class DisplayControls {
    * event to menu and receive reply event from menu to uderstand when mune has exit
    * 
    */
-  void _menu_encoder_action(const EventMsg* m);
+  void _menu_encoder_action(int8_t rotation);
 
+  // Rotary encoder callbacks
+  void handleRotate(int8_t rotation);
+  void handlePressRelease();
+  void handleLongPressRelease();
 public:
   // constructor
   DisplayControls();
@@ -131,25 +128,21 @@ class MuiMenu : public MuiPlusPlus {
 
 
 protected:
-  /**
-   * @brief reference to button object
-   * menu object can adjust it's properties to a fine grained control
-   * 
-   */
-  GPIOButton<ESPEventPolicy> &btn;
+ 
 
   /**
    * @brief reference to pseudo-encoder object
    * menu object can adjust it's properties to a fine grained control
    * 
    */
-  PseudoRotaryEncoder &encdr;
+  Versatile_RotaryEncoder &encdr;
 
 public:
   // c-tor
-  MuiMenu(GPIOButton<ESPEventPolicy> &button, PseudoRotaryEncoder &encoder) : btn(button), encdr(encoder) {};
+  MuiMenu(Versatile_RotaryEncoder &encoder) : encdr(encoder) {};
 
   virtual ~MuiMenu(){};
+  virtual void _buildMenu(u8g2_t &u8g2) = 0;
 };
 
 
@@ -172,6 +165,7 @@ struct Temperatures {
  * 
  */
 class TemperatureSetup : public MuiMenu {
+  private:
   // configured temperatures
 
   /*
@@ -185,12 +179,12 @@ class TemperatureSetup : public MuiMenu {
   bool save_work;
 
   // menu builder function
-  void _buildMenu();
 
 public:
   // c-tor
-  TemperatureSetup(GPIOButton<ESPEventPolicy> &button, PseudoRotaryEncoder &encoder);
+  TemperatureSetup(u8g2_t &u8g2, Versatile_RotaryEncoder &encoder);
   // d-tor
   ~TemperatureSetup();
 
+  void _buildMenu(u8g2_t &u8g2) override;
 };

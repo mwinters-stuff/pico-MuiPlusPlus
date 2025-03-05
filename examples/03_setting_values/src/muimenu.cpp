@@ -20,14 +20,14 @@
 
 #include "main.h"
 #include "muimenu.hpp"
-#define MENU_DEBUG_LEVEL 5
-#include "log.h"
+#include "u8g2functions.h"
+#include <u8g2.h>
 
-// declare external display object, I will need it to call renderer
-extern U8G2_SH1107_64X128_F_HW_I2C u8g2;
 
-// shortcut type aliases
-using ESPButton::event_t;
+// rotatry encoder pins
+#define clk 20
+#define dt 21
+#define sw 14
 
 // let's select some fonts for our Menu
 #define MAIN_MENU_FONT              u8g2_font_bauhaus2015_tr
@@ -43,118 +43,81 @@ const char* quitmenu = "menu closed";
 
 const char* stub_text = anyk;
 
-DisplayControls::DisplayControls() : _btn(BUTTON_ACTION, LOW), _encdr(BUTTON_DECR, BUTTON_INCR, LOW) {};
+DisplayControls::DisplayControls(): encoder(clk, dt, sw) {
+  u8g2_Setup_ssd1306_i2c_128x64_noname_f(&u8g2, U8G2_R0, u8x8_byte_hw_i2c, u8x8_gpio_and_delay_hw_i2c);};
+
+  void DisplayControls::handleRotate(int8_t rotation) {
+    if (_inMenu && _menu)
+      _menu_encoder_action(rotation);
+    else {
+      // otherwise, when I'm not in menu, just change a message displayed on screen
+      if (rotation == Versatile_RotaryEncoder::Rotary::right) {
+        stub_text = decr;
+      } else if (rotation == Versatile_RotaryEncoder::Rotary::left) {
+        stub_text = incr;
+      }
+    }
+    // redraw screen
+    _rr = true;
+  }
+  
+  void DisplayControls::handlePressRelease() {
+    if (_inMenu && _menu) {
+      _menu_ok_action();
+    } else {
+      stub_text = ok;
+      printf("OK Click\n");
+    }
+    _rr = true;
+  }
+  
+  void DisplayControls::handleLongPressRelease() {
+    if (!_inMenu) {
+      // currenlty I'm not in menu, so I need to dynamically create menu object from here and
+      // let it drive the display with menu functions
+      // for this I'm creating an instance of MuiPlusPlus object
+      // so the idea is - Menu Object is instantiated in memory ONLY when I'm entering menu and released on quit
+      _menu = std::make_unique<TemperatureSetup>(u8g2, encoder);
+      // _menu->_buildMenu(u8g2);
+      // set the flag, indicating that now I have menu object created for this same _evt_button() function would know to redirect further "OK" keypresses to menu from now on
+      _inMenu = true;
+    } else {
+      // we are already in Menu,
+      // so I'm sending 'escape' mui_event there to _menu object, and save what event I receive in return to this press
+      // let's save it as 'e' object (a mui_event structure)
+      auto e = _menu->muiEvent(mui_event(mui_event_t::escape));
+  
+      // Now I need to check if I received a reply with 'quitMenu' event back from menu object
+      // if that is so then I need to switch to Main Work Screen since menu has exited, long press will always quit Menu to main screen
+      if (e.eid == mui_event_t::quitMenu) {
+        // release our menu object - i.e. destruct it, releasing all memory
+        if (_menu)
+          _menu.release();
+        // set flag to indicate we are no longer in menu
+        _inMenu = false;
+        // change a message we print on a screen
+        stub_text = quitmenu;
+        printf("menu object destroyed\n");
+      }
+    }
+    _rr = true;
+  }
+  
 
 void DisplayControls::begin(){
-  _btn.deactivateAll();
-  _btn.enableEvent(event_t::click);
-  _btn.enableEvent(event_t::longPress);
-  _btn.enable();
-  // enable 'encoder' buttons
-  _encdr.begin();
+  encoder.setHandleRotate([this](int8_t rotation) { handleRotate(rotation); });
+  encoder.setHandlePressRelease([this]() { handlePressRelease(); });
+  encoder.setHandleLongPressRelease([this]() { handleLongPressRelease(); });
 
-  // subscribe to button events
-  esp_event_handler_instance_register(EBTN_EVENTS, ESP_EVENT_ANY_ID, DisplayControls::_event_picker, this, &_evt_btn_handler);
-
-  // subscribe to encoder events
-  esp_event_handler_instance_register(EBTN_ENC_EVENTS, ESP_EVENT_ANY_ID, DisplayControls::_event_picker, this, &_evt_enc_handler);
-
+  u8g2_InitDisplay(&u8g2);
+  u8g2_SetPowerSave(&u8g2, 0);
+  u8g2_SendBuffer(&u8g2);
 }
 
 DisplayControls::~DisplayControls(){
-  // unregister button events
-  if (_evt_btn_handler){
-    esp_event_handler_instance_unregister(EBTN_EVENTS, ESP_EVENT_ANY_ID, _evt_btn_handler);
-    _evt_btn_handler = nullptr;
-  }
-  if (_evt_enc_handler){
-    esp_event_handler_instance_unregister(EBTN_ENC_EVENTS, ESP_EVENT_ANY_ID, _evt_enc_handler);
-    _evt_enc_handler = nullptr;
-  }
+ 
 }
 
-void DisplayControls::_event_picker(void* arg, esp_event_base_t base, int32_t id, void* data){
-  // OK button events
-  if (base == EBTN_EVENTS){
-    // pick events only for "enter/OK" gpio button
-    if (reinterpret_cast<const EventMsg*>(data)->gpio == BUTTON_ACTION){
-      LOGV(T_HID, printf, "btn event:%d, gpio:%d\n", id, reinterpret_cast<EventMsg*>(data)->gpio);
-      static_cast<DisplayControls*>(arg)->_evt_button(ESPButton::int2event_t(id), reinterpret_cast<const EventMsg*>(data));
-    }
-    return;
-  }
-
-  // encoder events
-  if (base == EBTN_ENC_EVENTS){
-    LOGV(T_HID, printf, "enc event:%d, cnt:%d\n", id, reinterpret_cast<EventMsg*>(data)->cntr);
-    // pick encoder events and pass it to _menu member
-    static_cast<DisplayControls*>(arg)->_evt_encoder(ESPButton::int2event_t(id), reinterpret_cast<const EventMsg*>(data));
-    return;
-  }
-}
-
-
-// actions to take for middle button presses
-void DisplayControls::_evt_button(ESPButton::event_t e, const EventMsg* m){
-    // here I'll check if currenlty in Menu mode, than I'll send events to the Menu object
-    // otherwise I'll route button presses to do some silly message printing
-
-  switch(e){
-    // Use click event to send 'enter/ok' to MUI menu
-    case event_t::click :{
-      if (_inMenu && _menu){
-        // we are in Menu, let's pass button "OK" event to it
-        _menu_ok_action();
-      } else {
-        // we are not in menu, let's just print text on display
-        stub_text = ok;
-        Serial.println("OK Click");
-      }
-      break;
-    }
-
-    // use OK button longPress to act like "open menu" in normal mode and as "escape/return back" when in menu 
-    case event_t::longPress : {
-      if (!_inMenu){
-        // currenlty I'm not in menu, so need to create menu object from here
-        _menu = std::make_unique<TemperatureSetup>(_btn, _encdr);
-        _inMenu = true;
-      } else {
-        // we are in Menu, send 'escape' event there, and check if I receive 'quitMenu' event back
-        auto e = _menu->muiEvent( mui_event(mui_event_t::escape) );
-        // signal switch to Main Work Screen if quitMenu event received, long press will always quit Menu to main screen
-        if (e.eid == mui_event_t::quitMenu){
-          // release our menu object
-          _menu.release();
-          _inMenu = false;
-          stub_text = quitmenu;
-          Serial.println("menu object destroyed");
-        }
-      }
-      break;
-    }
-  }
-
-  // redraw screen
-  _rr = true;
-}
-
-// encoder events picker
-void DisplayControls::_evt_encoder(ESPButton::event_t e, const EventMsg* m){
-  LOGD(T_HID, printf, "_evt_encoder:%u, cnt:%d\n", e2int(e), m->cntr);
-  // I do not need counter value here (for now), just figure out if it was increment or decrement via gpio which triggered and event
-  if (_inMenu && _menu)
-    _menu_encoder_action(m);
-  else {
-    if (m->gpio == BUTTON_INCR){
-      stub_text = incr;
-    } else {
-      stub_text = decr;
-    }    
-  }
-  // redraw screen
-  _rr = true;
-}
 
 /**
  * @brief this method I'll call when my "enter" button is pressed and I need to pass "enter"
@@ -170,7 +133,7 @@ void DisplayControls::_menu_ok_action(){
     _menu.release();
     _inMenu = false;
     stub_text = quitmenu;
-    Serial.println("menu object destroyed");
+    printf("menu object destroyed\n");
   }
 }
 
@@ -179,37 +142,34 @@ void DisplayControls::_menu_ok_action(){
  * event to menu and receive reply event from menu to uderstand when mune has exit
  * 
  */
-void DisplayControls::_menu_encoder_action(const EventMsg* m){
+void DisplayControls::_menu_encoder_action(int8_t rotation) {
   // we are in menu, let's send "encoder" events to menu
-  // I do not care about returned events from menu for encoder buttons
-  if (m->gpio == BUTTON_INCR){
-    _menu->muiEvent( mui_event(mui_event_t::moveDown) );
-  } else {
-    _menu->muiEvent( mui_event(mui_event_t::moveUp) );
+  // I do not care about returned events from menu for encoder buttons presses for now because I know that
+  // menu could quit only on "OK" button press or longPress
+  if (rotation == Versatile_RotaryEncoder::Rotary::right) {
+    _menu->muiEvent(mui_event(mui_event_t::moveUp));
+  } else if (rotation == Versatile_RotaryEncoder::Rotary::left) {
+    _menu->muiEvent(mui_event(mui_event_t::moveDown));
   }
 }
 
 
 
 void DisplayControls::drawScreen(){
+  encoder.ReadEncoder();
   if (!_rr) return;
 
-  u8g2.clearBuffer();
-  if (_inMenu){
-    Serial.printf("Render menu:%lu ms\n", millis());
-    // call Mui renderer
+  u8g2_ClearBuffer(&u8g2);
+  if (_inMenu && _menu) {
+    printf("Render menu:%lu ms\n", to_ms_since_boot(get_absolute_time()));
     _menu->render();
   } else {
-    // if not in menu, we simply print static text with specified state
-    Serial.println("Render welcome screen");
-    u8g2.setFont(SMALL_TEXT_FONT);
-    u8g2.setCursor(0, u8g2.getDisplayHeight()/2);
-    u8g2.print(stub_text);
+    printf("Render welcome screen\n");
+    u8g2_SetFont(&u8g2, SMALL_TEXT_FONT);
+    u8g2_DrawStr(&u8g2, 0, u8g2_GetDisplayHeight(&u8g2) / 2, stub_text);
   }
-  u8g2.sendBuffer();
+  u8g2_SendBuffer(&u8g2);
 
-  // take a screenshot
-  //u8g2.writeBufferXBM(Serial);
   _rr = false;
 }
 
@@ -218,8 +178,8 @@ void DisplayControls::drawScreen(){
 //  **************************************
 //  ***   Temperature Control Menu     ***
 
-TemperatureSetup::TemperatureSetup(GPIOButton<ESPEventPolicy> &button, PseudoRotaryEncoder &encoder) : MuiMenu(button, encoder){
-  LOGD(T_HID, println, "Build temp menu");
+TemperatureSetup::TemperatureSetup(u8g2_t &u8g2, Versatile_RotaryEncoder &encoder) : MuiMenu(encoder){
+  printf("Build temp menu\n");
 
   // pretend that we restored temperature values from NVS/EEPROM, we just use defaults here
   Temperatures t;
@@ -229,11 +189,11 @@ TemperatureSetup::TemperatureSetup(GPIOButton<ESPEventPolicy> &button, PseudoRot
   _temp.at(1) = t.standby;
   _temp.at(2) = t.boost;
   save_work = t.savewrk;
-  _buildMenu();
+  _buildMenu(u8g2);
 }
 
 TemperatureSetup::~TemperatureSetup(){
-  LOGD(T_HID, println, "d-tor TemperatureSetup");
+  printf("d-tor TemperatureSetup\n");
   // pretend we save new temp settings to NVS
   Temperatures t;
 
@@ -246,13 +206,13 @@ TemperatureSetup::~TemperatureSetup(){
   //nvs_blob_write(T_IRON, T_temperatures, &t, sizeof(decltype(t)));
 
   //But let's just print it to serial
-  Serial.printf("New default temp:%d\n", t.deflt);
-  Serial.printf("New standby temp:%d\n", t.standby);
-  Serial.printf("New boost temp:%d\n", t.boost);
-  Serial.printf("New save last temp box:%u\n", t.savewrk);
+  printf("New default temp:%d\n", t.deflt);
+  printf("New standby temp:%d\n", t.standby);
+  printf("New boost temp:%d\n", t.boost);
+  printf("New save last temp box:%u\n", t.savewrk);
 }
 
-void TemperatureSetup::_buildMenu(){
+void TemperatureSetup::_buildMenu(u8g2_t &u8g2){
 
   /*
     this tempreture controls setup menu would be made of ribbon-like numeric scrollers
@@ -377,7 +337,7 @@ void TemperatureSetup::_buildMenu(){
       nullptr,        // print unformatted numeric value callbak
       nullptr, nullptr, nullptr,    // no callbacks required here, for details pls check MuiItem_U8g2_NumberHSlide declaration
       NUMERIC_FONT1, MAIN_MENU_FONT2,   // set two fonts for selected and neighbouring values on a Slider
-      u8g2.getDisplayWidth()/2, u8g2.getDisplayHeight()/2, NUMBERSLIDE_X_OFFSET   // location on screen where to print the numbers
+      u8g2_GetDisplayWidth(&u8g2)/2, u8g2_GetDisplayHeight(&u8g2)/2, NUMBERSLIDE_X_OFFSET   // location on screen where to print the numbers
     );
     // since this item is the only active on the page, return to prev page on unselect
     hslide->on_escape = mui_event_t::prevPage;

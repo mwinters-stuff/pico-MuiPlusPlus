@@ -22,10 +22,7 @@
 #pragma once
 #include <type_traits>
 
-// define gpio's for our buttons
-#define BUTTON_ACTION     GPIO_NUM_0     // middle push-button
-#define BUTTON_INCR       GPIO_NUM_2     // incrementer “+” push-button
-#define BUTTON_DECR       GPIO_NUM_4     // decrementer “-” push-button
+
 
 // define RST pin for display
 #define SH1107_RST_PIN    7     // display reset pin
