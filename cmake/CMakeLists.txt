@@ -14,4 +14,5 @@ target_include_directories(MuiPlusPlus PUBLIC
 )
 
 target_link_libraries(MuiPlusPlus PUBLIC
-        pico_stdlib)
+        pico_stdlib
+        u8g2)
