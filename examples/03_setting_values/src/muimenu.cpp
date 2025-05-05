@@ -44,7 +44,8 @@ const char* quitmenu = "menu closed";
 const char* stub_text = anyk;
 
 DisplayControls::DisplayControls(): encoder(clk, dt, sw) {
-  u8g2_Setup_ssd1306_i2c_128x64_noname_f(&u8g2, U8G2_R0, u8x8_byte_hw_i2c, u8x8_gpio_and_delay_hw_i2c);};
+  u8g2_Setup_ssd1306_i2c_128x64_noname_f(&u8g2, U8G2_R0, u8x8_byte_hw_i2c, u8x8_gpio_and_delay_hw_i2c);
+};
 
   void DisplayControls::handleRotate(int8_t rotation) {
     if (_inMenu && _menu)
