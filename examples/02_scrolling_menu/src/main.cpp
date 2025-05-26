@@ -9,7 +9,7 @@ int main() {
     DisplayControls display;
     display.begin();
 
-    printf("Scrolling Menu Example\n");
+    // printf("Scrolling Menu Example\n");
 
     while (true) {
         display.drawScreen();

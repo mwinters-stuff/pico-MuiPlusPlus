@@ -15,7 +15,7 @@ void hardware_i2c_init() {
     gpio_set_function(I2C_SCL, GPIO_FUNC_I2C);
     gpio_pull_up(I2C_SDA);
     gpio_pull_up(I2C_SCL);
-    // printf("Hardware I2C initialized on SDA: %d, SCL: %d\n", I2C_SDA, I2C_SCL);
+    // // printf("Hardware I2C initialized on SDA: %d, SCL: %d\n", I2C_SDA, I2C_SCL);
 }
 
 // Hardware I2C implementation for u8x8_byte callback

@@ -75,7 +75,7 @@ void DisplayControls::handlePressRelease() {
     _menu_ok_action();
   } else {
     stub_text = ok;
-    printf("OK Click\n");
+    // printf("OK Click\n");
   }
   _rr = true;
 }
@@ -106,7 +106,7 @@ void DisplayControls::handleLongPressRelease() {
       _inMenu = false;
       // change a message we print on a screen
       stub_text = quitmenu;
-      printf("menu object destroyed\n");
+      // printf("menu object destroyed\n");
     }
   }
   _rr = true;
@@ -141,7 +141,7 @@ void DisplayControls::_menu_ok_action() {
     _menu.release();
     _inMenu = false;
     stub_text = quitmenu;
-    printf("menu object destroyed\n");
+    // printf("menu object destroyed\n");
   }
 }
 
@@ -169,10 +169,10 @@ void DisplayControls::drawScreen() {
 
   u8g2_ClearBuffer(&u8g2);
   if (_inMenu && _menu) {
-    printf("Render menu:%lu ms\n", to_ms_since_boot(get_absolute_time()));
+    // printf("Render menu:%lu ms\n", to_ms_since_boot(get_absolute_time()));
     _menu->render();
   } else {
-    printf("Render welcome screen\n");
+    // printf("Render welcome screen\n");
     u8g2_SetFont(&u8g2, SMALL_TEXT_FONT);
     u8g2_DrawStr(&u8g2, 0, u8g2_GetDisplayHeight(&u8g2) / 2, stub_text);
   }

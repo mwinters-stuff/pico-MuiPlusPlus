@@ -90,7 +90,7 @@ void MuiItem_U8g2_TextCallBack::render(const MuiItem* parent){
 
   auto a = getXoffset(name);
   u8g2_DrawUTF8(&_u8g2, a, _y, _cb());
-  //printf("TextCallBack: %s\n", _cb());
+  //// printf("TextCallBack: %s\n", _cb());
 }
 
 
@@ -120,7 +120,7 @@ mui_event MuiItem_U8g2_ActionButton::muiEvent(mui_event e){
 //}
 
 void MuiItem_U8g2_DynamicScrollList::render(const MuiItem* parent){
-  printf("DynScrl print lst of %u items\n", _size_cb());
+  // printf("DynScrl print lst of %u items\n", _size_cb());
 
   setCursor(_x, _y);
   // specified cursor position will be the top reference for the Title text
@@ -136,7 +136,7 @@ void MuiItem_U8g2_DynamicScrollList::render(const MuiItem* parent){
       u8g2_SetFont(&_u8g2, _font2);
 
     // draw button
-    printf("draw Dynlist_btn %u:%s\n", visible_idx, _cb(visible_idx));
+    // printf("draw Dynlist_btn %u:%s\n", visible_idx, _cb(visible_idx));
     u8g2_DrawButtonUTF8(&_u8g2, _x, _y + _y_shift*i, visible_idx == _index ? U8G2_BTN_INV : 0, 0, 1, 1, _cb(visible_idx));
 
     if (++visible_idx >= _size_cb())
@@ -146,7 +146,7 @@ void MuiItem_U8g2_DynamicScrollList::render(const MuiItem* parent){
 
 
 mui_event MuiItem_U8g2_DynamicScrollList::muiEvent(mui_event e){
-  printf("DynamicScrollList::muiEvent %u\n", static_cast<uint32_t>(e.eid));
+  // printf("DynamicScrollList::muiEvent %u\n", static_cast<uint32_t>(e.eid));
   switch(e.eid){
     // cursor actions - move to previous position in a list
     case mui_event_t::moveUp :

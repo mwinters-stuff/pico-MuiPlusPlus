@@ -99,7 +99,7 @@ void handle_events(void)
             stub_text = ok;
         }
         refreshScreen = true;
-        printf("ok click\n");
+        // printf("ok click\n");
         btn_ok_pressed = false;
     }
 
@@ -108,7 +108,7 @@ void handle_events(void)
     {
         inMenu = true;
         refreshScreen = true;
-        printf("long press ok\n");
+        // printf("long press ok\n");
         btn_ok_long_press = false;
     }
 
@@ -124,7 +124,7 @@ void handle_events(void)
             stub_text = incr;
         }
         refreshScreen = true;
-        printf("btn increment\n");
+        // printf("btn increment\n");
         rotate_event = 0;
     }
 
@@ -139,7 +139,7 @@ void handle_events(void)
             stub_text = decr;
         }
         refreshScreen = true;
-        printf("btn decrement\n");
+        // printf("btn decrement\n");
         rotate_event = 0;
     }
 }
@@ -165,8 +165,8 @@ int main()
     setup_menu();
     setup_buttons();
 
-    printf("Press any keys once to see it's actions\n");
-    printf("Long Press OK key to open menu\n");
+    // printf("Press any keys once to see it's actions\n");
+    // printf("Long Press OK key to open menu\n");
 
     while (true)
     {
@@ -195,12 +195,12 @@ void screen_render()
 
     if (inMenu)
     {
-        printf("Render menu\n");
+        // printf("Render menu\n");
         muiplus.render();
     }
     else
     {
-        printf("Render welcome screen\n");
+        // printf("Render welcome screen\n");
         u8g2_SetFont(&u8g2, SMALL_TEXT_FONT);
         u8g2_DrawStr(&u8g2, 0, u8g2_GetDisplayHeight(&u8g2) / 2, stub_text);
     }

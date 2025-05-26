@@ -67,7 +67,7 @@ DisplayControls::DisplayControls(): encoder(clk, dt, sw) {
       _menu_ok_action();
     } else {
       stub_text = ok;
-      printf("OK Click\n");
+      // printf("OK Click\n");
     }
     _rr = true;
   }
@@ -98,7 +98,7 @@ DisplayControls::DisplayControls(): encoder(clk, dt, sw) {
         _inMenu = false;
         // change a message we print on a screen
         stub_text = quitmenu;
-        printf("menu object destroyed\n");
+        // printf("menu object destroyed\n");
       }
     }
     _rr = true;
@@ -134,7 +134,7 @@ void DisplayControls::_menu_ok_action(){
     _menu.release();
     _inMenu = false;
     stub_text = quitmenu;
-    printf("menu object destroyed\n");
+    // printf("menu object destroyed\n");
   }
 }
 
@@ -162,10 +162,10 @@ void DisplayControls::drawScreen(){
 
   u8g2_ClearBuffer(&u8g2);
   if (_inMenu && _menu) {
-    printf("Render menu:%lu ms\n", to_ms_since_boot(get_absolute_time()));
+    // printf("Render menu:%lu ms\n", to_ms_since_boot(get_absolute_time()));
     _menu->render();
   } else {
-    printf("Render welcome screen\n");
+    // printf("Render welcome screen\n");
     u8g2_SetFont(&u8g2, SMALL_TEXT_FONT);
     u8g2_DrawStr(&u8g2, 0, u8g2_GetDisplayHeight(&u8g2) / 2, stub_text);
   }
@@ -180,7 +180,7 @@ void DisplayControls::drawScreen(){
 //  ***   Temperature Control Menu     ***
 
 TemperatureSetup::TemperatureSetup(u8g2_t &u8g2, Versatile_RotaryEncoder &encoder) : MuiMenu(encoder){
-  printf("Build temp menu\n");
+  // printf("Build temp menu\n");
 
   // pretend that we restored temperature values from NVS/EEPROM, we just use defaults here
   Temperatures t;
@@ -194,7 +194,7 @@ TemperatureSetup::TemperatureSetup(u8g2_t &u8g2, Versatile_RotaryEncoder &encode
 }
 
 TemperatureSetup::~TemperatureSetup(){
-  printf("d-tor TemperatureSetup\n");
+  // printf("d-tor TemperatureSetup\n");
   // pretend we save new temp settings to NVS
   Temperatures t;
 
@@ -207,10 +207,10 @@ TemperatureSetup::~TemperatureSetup(){
   //nvs_blob_write(T_IRON, T_temperatures, &t, sizeof(decltype(t)));
 
   //But let's just print it to serial
-  printf("New default temp:%d\n", t.deflt);
-  printf("New standby temp:%d\n", t.standby);
-  printf("New boost temp:%d\n", t.boost);
-  printf("New save last temp box:%u\n", t.savewrk);
+  // printf("New default temp:%d\n", t.deflt);
+  // printf("New standby temp:%d\n", t.standby);
+  // printf("New boost temp:%d\n", t.boost);
+  // printf("New save last temp box:%u\n", t.savewrk);
 }
 
 void TemperatureSetup::_buildMenu(u8g2_t &u8g2){
