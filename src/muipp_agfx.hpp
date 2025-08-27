@@ -5,15 +5,15 @@
 #include "muiplusplus.hpp"
 
 /**
- * @brief aggregate carries options to print text 
+ * @brief aggregate holds options to print text at some pont
  * 
  */
 struct AGFX_text_t {
-  uint16_t color, bgcolor;
-  const uint8_t* font{nullptr};
-  uint8_t font_size;
-  muipp::text_align_t halign{muipp::text_align_t::left}, valign{muipp::text_align_t::baseline};
-  bool transp_bg{true};
+  const uint8_t* font{nullptr};         // U8G2 font
+  uint16_t color, bgcolor;              // font / background color
+  uint8_t font_size;                    // fint size multiplicator
+  muipp::text_align_t halign{muipp::text_align_t::left}, valign{muipp::text_align_t::baseline};   // text alignment
+  bool transp_bg{true};                 // transparent background
 };
 
 /**
@@ -36,7 +36,9 @@ public:
    * @param font use font for printing, if null, then do not switch font
    * @param x, y Coordinates of the top left corner to start printing
    */
-  MuiItem_AGFX_GenericTXT(int16_t x = 0, int16_t y = 0, AGFX_text_t tcfg = {}) : _x(x), _y(y), cfg(tcfg) {};
+  MuiItem_AGFX_GenericTXT(int16_t x = 0, int16_t y = 0, const AGFX_text_t& tcfg = {}) : _x(x), _y(y), cfg(tcfg) {};
+
+  MuiItem_AGFX_GenericTXT(std::pair<int16_t, int16_t> xy, const AGFX_text_t& tcfg = {}) : _x(xy.first), _y(xy.second), cfg(tcfg) {};
 
   int16_t getX() const { return _x; }
 
@@ -80,10 +82,14 @@ public:
    * @param font use font for printing, if null, then do not switch font
    * @param x, y Coordinates of the top left corner to start printing
    */
-  MuiItem_AGFX_StaticText(muiItemId id, const char* text, u8g2_uint_t x = 0, u8g2_uint_t y = 0, AGFX_text_t tcfg = {})
+  MuiItem_AGFX_StaticText(muiItemId id, const char* text, u8g2_uint_t x = 0, u8g2_uint_t y = 0, const AGFX_text_t& tcfg = {})
     : MuiItem_AGFX_GenericTXT(x, y, tcfg),
       MuiItem_Uncontrollable(id, text) {};
 
+  MuiItem_AGFX_StaticText(muiItemId id, const char* text, std::pair<int16_t, int16_t> xy, const AGFX_text_t& tcfg = {})
+  : MuiItem_AGFX_GenericTXT(xy, tcfg),
+    MuiItem_Uncontrollable(id, text) {};
+  
   void render(const MuiItem* parent, void* r = nullptr) override;
 };
   
@@ -104,6 +110,13 @@ public:
       AGFX_text_t tcfg = {})
         : MuiItem_AGFX_GenericTXT(x, y, tcfg),
           MuiItem_Uncontrollable(id), _cb(callback) {};
+
+  MuiItem_AGFX_TextCallBack(muiItemId id, muipp::string_cb_t callback,
+    std::pair<int16_t, int16_t> xy,
+    AGFX_text_t tcfg = {})
+      : MuiItem_AGFX_GenericTXT(xy, tcfg),
+        MuiItem_Uncontrollable(id), _cb(callback) {};
+      
 
   void render(const MuiItem* parent, void* r = nullptr) override;
 };
@@ -152,12 +165,13 @@ private:
 };
 
 class MuiItem_AGFX_TextScroller : public MuiItem_Uncontrollable {
-  CanvasTextScroller _scroller;
   int16_t _x, _y;
+  float _speed;
   AGFX_text_t _tcfg;
+  CanvasTextScroller _scroller;
 public:
   /**
-   * @brief Construct a new MuiItem_U8g2_PageTitle object
+   * @brief text scroller via ArduinoGFX's canvas
    * 
    * @param id assigned id for the item
    * @param x, y Coordinates of the top left corner to start printing
@@ -168,10 +182,18 @@ public:
   MuiItem_AGFX_TextScroller(muiItemId id,
       int16_t x, int16_t y,
       uint16_t w, uint16_t h,
-      AGFX_text_t tcfg = {})
-        : MuiItem_Uncontrollable(id), _scroller(w, h), _x(x), _y(y), _tcfg(tcfg) {};
+      float speed = 25,
+      const AGFX_text_t& tcfg = {})
+        : MuiItem_Uncontrollable(id), _scroller(w, h), _x(x), _y(y), _speed(speed), _tcfg(tcfg) {};
+
+  MuiItem_AGFX_TextScroller(muiItemId id,
+      std::tuple<int16_t, int16_t, uint16_t, uint16_t> dim,
+      float speed = 25,
+      const AGFX_text_t& tcfg = {})
+        : MuiItem_Uncontrollable(id), _scroller(std::get<2>(dim), std::get<3>(dim)), _x(std::get<0>(dim)), _y(std::get<1>(dim)), _speed(speed), _tcfg(tcfg) {};
 
   void setText(const char* text, float speed){ _scroller.begin(text, speed, _tcfg.font); }
+  void setText(const char* text){ _scroller.begin(text, _speed, _tcfg.font); }
   void render(const MuiItem* parent, void* r = nullptr) override;
   bool refresh_req() const override { return _scroller.scroll_pending(); };
 };

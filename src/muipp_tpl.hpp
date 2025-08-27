@@ -21,6 +21,11 @@ using constrain_val_cb_t = std::function< void (muiItemId id, T value, T min, T 
 template <typename T>
 using stringify_cb_t = std::function< std::string (T value)>;
 
+/**
+ * @brief text alignment specifier
+ * applicable mostly to U8g2 since it has best font positioning support,
+ * but also could be used for other objects
+ */
 enum class text_align_t {
   baseline = 0,
   center,
@@ -28,6 +33,50 @@ enum class text_align_t {
   bottom,
   left,
   right
+};
+
+/**
+ * @brief specifier for placemnent coordinates
+ * used in 'item_position_t' strunct
+ * 
+ */
+enum class coordinate_spec_t {
+  absolute = 0,   // absolute position, i.e. x,y conted from the top left corner of the display
+  //relative,       // pixel offset from previous item (if applicable)
+  inversed,       // coordinate specifies offset from the opposite border of the screen, i.e. for x = 10 means "offset 10 px left from the right edge"
+  center_offset,  // offset from a center of axis, width ot height
+  grid            // treat x,y as grid coordinates, where base for the grid is defined via additional denominators
+};
+
+/**
+ * @brief struct defines item positioning
+ * could be used for absolute or relative positioning
+ * 
+ */
+struct item_position_t {
+  // placement values x, y axis
+  int16_t x, y;
+  // coordinate specifier (how to treat x and y)
+  coordinate_spec_t cs_x, cs_y;
+  // denominator for proportional coordinates
+  uint8_t grid_size_x, grid_size_y;
+
+  /**
+   * @brief calculates absolute position for specified canvas with dimentions WxH
+   * 
+   */
+  std::pair<int16_t, int16_t> getAbsoluteXY(int16_t w, int16_t h) const;
+};
+
+
+struct grid_box {
+  // grid size
+  uint16_t grid_size_x, grid_size_y;
+  // position on a grid
+  int16_t box_x, box_y;
+  // box size in grid's units
+  uint16_t box_w, box_h;
+  std::tuple<int16_t, int16_t, uint16_t, uint16_t> getBoxDimensions(int16_t w, int16_t h) const;
 };
 
 
