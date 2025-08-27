@@ -4,9 +4,6 @@
 #include <memory>
 #include <vector>
 #include "muipp_tpl.hpp"
-//#include <string_view>
-//#include "clib/mui.h"
-//#include "clib/mui_u8g2.h"
 #include "Arduino.h"
 
 #define MAX_NESTED_EVENTS 5

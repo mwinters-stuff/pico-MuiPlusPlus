@@ -468,8 +468,8 @@ mui_err_t MuiPlusPlus::_any_focusable_item_on_a_page_e(){
     return mui_err_t::ok;
   }
 
-  // invalidate itrator
-  (*currentPage).items.end();
+  // invalidate iterator
+  (*currentPage).currentItem = (*currentPage).items.end();
   return mui_err_t::id_err;
 }
 
