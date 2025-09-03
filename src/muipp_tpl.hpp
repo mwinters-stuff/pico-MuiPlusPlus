@@ -17,9 +17,13 @@ using stringbyindex_cb_t = std::function< const char* (size_t index)>;
 // callback function for constrained numeric
 template <typename T>
 using constrain_val_cb_t = std::function< void (muiItemId id, T value, T min, T max, T step)>;
-// stringifying function, it accepts some object value and returns a srting that identifies the value (i.e. convert int to asci, etc...)
+// stringifying function, it accepts some object value and returns a string that identifies the value (i.e. convert int to asci, etc...)
 template <typename T>
 using stringify_cb_t = std::function< std::string (T value)>;
+
+// callback function that returns something by value :) mostly usefull with POD objects - ints, floats, etc...
+template <typename T>
+using value_cb_t = std::function< T (void)>;
 
 /**
  * @brief text alignment specifier

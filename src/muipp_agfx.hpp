@@ -126,7 +126,7 @@ class CanvasTextScroller {
 public:
   CanvasTextScroller(uint16_t w, uint16_t h) : _c(w, h, nullptr) { _c.begin(); }    // canvas will malloc in c-tor
 
-  void begin(const char* text, float speed, const uint8_t* font);
+  void begin(const char* text, float speed, const uint8_t* font, uint8_t size = 1);
 
   /**
    * @brief checks if scroll redraw is peding
@@ -192,8 +192,17 @@ public:
       const AGFX_text_t& tcfg = {})
         : MuiItem_Uncontrollable(id), _scroller(std::get<2>(dim), std::get<3>(dim)), _x(std::get<0>(dim)), _y(std::get<1>(dim)), _speed(speed), _tcfg(tcfg) {};
 
-  void setText(const char* text, float speed){ _scroller.begin(text, speed, _tcfg.font); }
-  void setText(const char* text){ _scroller.begin(text, _speed, _tcfg.font); }
+  void setText(const char* text, float speed){ _scroller.begin(text, speed, _tcfg.font, _tcfg.font_size); }
+  void setText(const char* text){ _scroller.begin(text, _speed, _tcfg.font, _tcfg.font_size); }
   void render(const MuiItem* parent, void* r = nullptr) override;
   bool refresh_req() const override { return _scroller.scroll_pending(); };
+};
+
+class MuiItem_RangeSlider : public MuiItem {
+
+  muipp::grid_box _pos;
+
+public:
+  MuiItem_RangeSlider(muiItemId id, const char* text, const muipp::grid_box& position) : MuiItem(id) {}
+
 };

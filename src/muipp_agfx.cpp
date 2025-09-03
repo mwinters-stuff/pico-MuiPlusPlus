@@ -59,11 +59,12 @@ void MuiItem_AGFX_TextCallBack::render(const MuiItem* parent, void* r){
   }
   
 
-void CanvasTextScroller::begin(const char* text, float speed, const uint8_t* font){
+void CanvasTextScroller::begin(const char* text, float speed, const uint8_t* font, uint8_t size){
   _text = text;
   _speed = speed / 1000;
   _c.setCursor(0, _c.height());
   _c.setFont(font);
+  _c.setTextSize(size);
   _c.setTextWrap(false);
   _c.setUTF8Print(true);
   _c.getTextBounds(_text.c_str(), 0, _c.height(), &xx, &yy, &ww, &hh);
