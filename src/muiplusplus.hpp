@@ -243,6 +243,13 @@ public:
    */
   muiItemId autoSelect{0};
 
+  /**
+   * @brief remove item with specified id from the page
+   * 
+   * @param id 
+   */
+  void removeItem(muiItemId item_id);
+
   //using MuiItem::MuiItem;
   //void addMuippItem(muiItemId item_id){ items.push_back(item_id); currentItem = items.begin(); };
 };
@@ -349,7 +356,7 @@ public:
 
   mui_err_t addMuippItem(MuiItem_pt item, muiItemId page_id = 0);
 
-  mui_err_t addMuippItem(MuiItem *item, muiItemId page_id = 0);
+  mui_err_t addMuippItem(MuiItem *item, muiItemId page_id = 0){ return addMuippItem(MuiItem_pt(item), page_id); };
 
   //mui_err_t addMuippItem(MuiItem&& item, muiItemId page_id = 0);//{ addMuippItem( std::make_unique<MuiItem_pt>(std::move(item)), page_id); };
 
@@ -410,6 +417,14 @@ public:
    * purge all pages and items
    */
   void clear();
+
+  /**
+   * @brief remove item with specified id
+   * will recursevely remove specified item from all the pages
+   * 
+   * @param id 
+   */
+  void removeItem(muiItemId item_id);
 
 // other private methods
 private:

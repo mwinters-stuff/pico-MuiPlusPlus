@@ -204,14 +204,16 @@ public:
       int16_t x, int16_t y,
       uint16_t w, uint16_t h,
       float speed = 25,
-      const AGFX_text_t& tcfg = {})
-        : MuiItem_Uncontrollable(id), _scroller(w, h), _x(x), _y(y), _speed(speed), _tcfg(tcfg) {};
+      const AGFX_text_t& tcfg = {},
+      const char* label = NULL)
+        : MuiItem_Uncontrollable(id, label), _scroller(w, h), _x(x), _y(y), _speed(speed), _tcfg(tcfg) {};
 
   MuiItem_AGFX_TextScroller(muiItemId id,
       std::tuple<int16_t, int16_t, uint16_t, uint16_t> dim,
       float speed = 25,
-      const AGFX_text_t& tcfg = {})
-        : MuiItem_Uncontrollable(id), _scroller(std::get<2>(dim), std::get<3>(dim)), _x(std::get<0>(dim)), _y(std::get<1>(dim)), _speed(speed), _tcfg(tcfg) {};
+      const AGFX_text_t& tcfg = {},
+      const char* label = NULL)
+        : MuiItem_Uncontrollable(id, label), _scroller(std::get<2>(dim), std::get<3>(dim)), _x(std::get<0>(dim)), _y(std::get<1>(dim)), _speed(speed), _tcfg(tcfg) {};
 
   void setText(const char* text, float speed){ _scroller.begin(text, speed, _tcfg.font, _tcfg.font_size); }
   void setText(const char* text){ _scroller.begin(text, _speed, _tcfg.font, _tcfg.font_size); }

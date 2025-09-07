@@ -47,6 +47,16 @@ void MuiPlusPlus::add(MuiPage_pt&& page){
 }
 */
 
+void MuiPage::removeItem(muiItemId item_id){
+  // if we attempt to erase current item, then iterator must be invalidated
+  if ( currentItem != items.end() && (*currentItem)->id == item_id ){
+    currentItem = items.end();
+    itm_selected = false;
+  }
+  std::erase_if(items, muipp::MatchID<MuiItem_pt>(item_id));
+}
+
+
 MuiPlusPlus::MuiPlusPlus(){
   // invalidate iterator
   currentPage = pages.end();
@@ -69,30 +79,24 @@ muiItemId MuiPlusPlus::makePage(const char* name, muiItemId parent, item_opts op
 
 mui_err_t MuiPlusPlus::addMuippItem(MuiItem_pt item, muiItemId page_id){
   //Serial.printf("Adding item %u, page %u\n", item->id, page_id);
-  auto i = std::find_if(items.cbegin(), items.cend(), muipp::MatchID<MuiItem_pt>(item->id));
+  muiItemId item_id(item->id);    // this must a copy!
+  auto i = std::find_if(items.cbegin(), items.cend(), muipp::MatchID<MuiItem_pt>(item_id));
   if ( i != items.cend() ){
     //Serial.printf("item:%u already exist!\n", item->id);
     return mui_err_t::id_exist;
   }
 
-  // add item to container
-  items.emplace_back(item);
-
+  // move item to container
+  items.emplace_back(std::move(item));
+  
   // link item with the specified page
   if (page_id){
-    mui_err_t err = addItemToPage(item->id, page_id);
+    mui_err_t err = addItemToPage(item_id, page_id);
     if (err != mui_err_t::ok) return err;
   }
 
   return mui_err_t::ok;
 }
-
-
-mui_err_t MuiPlusPlus::addMuippItem(MuiItem *item, muiItemId page_id){
-  MuiItem_pt p(item);
-  return addMuippItem(std::move(p), page_id);
-}
-
 
 mui_err_t MuiPlusPlus::addItemToPage(muiItemId item_id, muiItemId page_id){
   if (!item_id || !page_id) return mui_err_t::id_err;
@@ -100,7 +104,7 @@ mui_err_t MuiPlusPlus::addItemToPage(muiItemId item_id, muiItemId page_id){
   // check if such page exist
   auto p = _page_by_id(page_id);
   if ( p == pages.end() ){
-    //Serial.printf("page:%u not found\n", page_id);
+    Serial.printf("page:%u not found\n", page_id);
     return mui_err_t::id_err;
   }
 
@@ -499,4 +503,13 @@ void MuiPlusPlus::clear(){
   items.clear();
   _items_index = _pages_index = 0;
   currentPage = pages.end();
+}
+
+void MuiPlusPlus::removeItem(muiItemId item_id){
+  // remove item from all the pages
+  for (auto &i : pages){
+    i.removeItem(item_id);
+  }
+  // erase the item itself
+  std::erase_if(items, muipp::MatchID<MuiItem_pt>(item_id));
 }
