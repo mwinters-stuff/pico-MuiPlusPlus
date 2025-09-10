@@ -79,42 +79,70 @@ void MuiItem_AGFX_TextCallBack::render(const MuiItem* parent, void* r){
 */
   }
   
+//  ******************
+//  CanvasTextScroller
+//  ******************
 
-void CanvasTextScroller::begin(const char* text, float speed, const uint8_t* font, uint8_t size){
+void CanvasTextScroller::begin(const char* text, const uint8_t* font, uint8_t font_size){
+  if (!strlen(text)) return;
   _text = text;
-  _speed = speed / 1000;
   _c.setCursor(0, _c.height());
   _c.setFont(font);
-  _c.setTextSize(size);
+  _c.setTextSize(font_size);
   _c.setTextWrap(false);
-  _c.setUTF8Print(true);
-  _c.getTextBounds(_text.c_str(), 0, _c.height(), &xx, &yy, &ww, &hh);
+  _c.getTextBounds(_text, 0, _c.height(), &xx, &yy, &ww, &hh);
   _xPos = _c.width(); // Start from the right edge
   _lastUpdate = millis();
+  _inactive = false;
+}
+
+void CanvasTextScroller::update(const char* text){
+  if (!strlen(text)) return;
+  _text = text;
+  _c.getTextBounds(_text, 0, _c.height(), &xx, &yy, &ww, &hh);
 }
 
 bool CanvasTextScroller::scroll_pending() const {
-  if (!_text.length()) return false;
+  if (!_text) return false;
   unsigned long now = millis();
-  float elapsed = now - _lastUpdate;
+  unsigned long elapsed = now - _lastUpdate;
   float newPos = _xPos - _speed * elapsed;
   // find if time for one px shift has passed
   return (_xPos - newPos >= 1.0);
 }
 
 bool CanvasTextScroller::scroll() {
-  if (!_text.length()) return false;
+  if (!_text) return false;
+  // check if scroller was aborted asynchronously
+  if (_inactive){
+    _text = NULL;
+    if (_cb)
+      _cb(event_t::end);
+  }
+
   unsigned long now = millis();
-  float elapsed = now - _lastUpdate;
-  
+  unsigned long elapsed = now - _lastUpdate;
   float newPos = _xPos - _speed * elapsed;
-  //Serial.print(_xPos - newPos < 1.0 ? "." : "!");
   // find if time for one px shift has passed
   if (_xPos - newPos < 1.0 )
     return false;
-  
-  // If text is completely off-screen to the left, reset to right
+
+  // make an event call if needed
+  if (_cb){
+    if (newPos < 0 && _xPos > 0 && _cb(event_t::head_at_left))                                    // check if head reached right edge
+      return false;
+    else if (_xPos + ww > _c.width() && newPos + ww < _c.width() && _cb(event_t::tail_at_right))  // check if tail reached right edge
+      return false;
+    else if (_xPos + ww > 0 && newPos + ww < 0 && _cb(event_t::tail_at_left))                      // check if tail reached left edge
+      return false;
+  }
+
+  // If text is completely off-screen to the left, reset it to right edge
   _xPos = newPos + ww < 0 ? _c.width() : newPos;
+  // check if string was rolled over, then generate an event on this
+  if (_cb && (_xPos == _c.width()) && _cb(event_t::head_at_left))
+    return false;
+
   _drawall();
   //_drawVisible();
   _lastUpdate = now;
@@ -126,9 +154,9 @@ void CanvasTextScroller::_drawall() {
   _c.fillScreen(0);
   // calculate offset from a baseline for current text
   _c.setCursor(_xPos,_c.height() - (yy + hh - _c.height()));
-  _c.print(_text.c_str());
+  _c.print(_text);
 }
-
+/*
 void CanvasTextScroller::_drawVisible() {
   _c.fillScreen(0);
 
@@ -152,12 +180,7 @@ void CanvasTextScroller::_drawVisible() {
     if (cursorX > _c.width()) break; // beyond screen
   }
 }
-
-
-void MuiItem_AGFX_TextScroller::render(const MuiItem* parent, void* r){
-  if (_scroller.scroll())
-    static_cast<Arduino_GFX*>(r)->drawBitmap(_x, _y, _scroller.getFramebuffer(), _scroller.getW(), _scroller.getH(), _tcfg.color, _tcfg.bgcolor);
-}
+*/
 
 
 #endif  // __has_include("Arduino_GFX.h")
