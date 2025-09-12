@@ -143,53 +143,122 @@ public:
 };
 
 
+/**
+ * @brief text scroller that uses binary canvas to render text 
+ * 
+ */
 class CanvasTextScroller {
 public:
-  CanvasTextScroller(uint16_t w, uint16_t h) : _c(w, h, nullptr) { _c.begin(); }    // canvas will malloc in c-tor
+  CanvasTextScroller(uint16_t w, uint16_t h) : _c(w, h, nullptr) { _c.begin(); _c.setUTF8Print(true); }    // canvas will malloc in c-tor
 
-  void begin(const char* text, float speed, const uint8_t* font, uint8_t size = 1);
+  enum class event_t { 
+    head_at_left,     // head of the string reached left edge of the canvas, i.e. head start going off the screen if moved from right to left
+    head_at_right,    // head of the string reached right edge of the canvas, i.e. head just started moving from right to left
+    tail_at_right,    // tail of the string reached right edge of the canvas
+    tail_at_left,     // tail of the string reached left edge of the canvas, i.e. string got out of the visibility
+    end               // scrolling complete, aborted, etc... on this event the pointer to text string is invalidated. A new scrolling should be set with begin()
+  };
+
+  /**
+   * @brief callback function for scrolling events
+   * if function returns true - abort current render and wait for the next call, could be used to reload the scroll text when reaching certain portions of the screen
+   * if function returns false - keep rendering the text
+   */
+  using event_cb = std::function< bool (event_t e)>;
+
+  /**
+   * @brief begin scrolling text
+   * 
+   * @param text the pointer MUST persist during whole scrolling duration!
+   * @note do NOT pass here temporary created String's, etc...
+   * @note begin() is NOT thread safe if scroll() is executed in another thread! If using from different threads, call abort() first then assign new text pointer from a callback
+   * @param font U8G2 unicode font
+   * @param font_size font scaling
+   */
+  void begin(const char* text, const uint8_t* font, uint8_t font_size = 1);
+
+  /**
+   * @brief Update currently scrolled text
+   * @note update() is NOT thread safe if scroll() is executed in another thread! If using from different threads, call abort() first then assign new text pointer from a callback
+   * 
+   * @param text 
+   */
+  void update(const char* text);
+
+  /**
+   * @brief asynchronously abort scrolling
+   * @note instance will release text pointer only on a next scroll() call!!!
+   * should be used along with callbacks for thread-safe cases, otherwise just use begin()
+   * @note a new scrolling must be set with begin()
+   * 
+   */
+  void abort(){ _inactive = true; };
+
+  // set scrolling speed in pixels per second
+  void setSpeed(uint32_t v){ _speed = v / 1000.0; };
 
   /**
    * @brief checks if scroll redraw is peding
-   * if true, than a subsecuent call to scroll() is requred to actually render the text
+   * if true, than a subsequent call to scroll() is required to actually render the text
    * 
    */
   bool scroll_pending() const;
 
+  /**
+   * @brief render text on canvas
+   * 
+   * @return true if rendereng was done, i.e. elapset time from the last call required to move text at least for 1 pixel
+   * @return false if no rendering was done and canvas content left intacted
+   */
   bool scroll();
 
+  // set event callback
+  void setCallBack(event_cb f){ _cb = f; }
+
+  // access the canvas
   const uint8_t* getFramebuffer(){ return _c.getFramebuffer(); }
+
+  // reset current scroller position, start the text from right edge
+  void reset(){ _xPos = _c.width(); _lastUpdate = millis(); };
 
   int16_t getW() const { return _c.width(); }
   int16_t getH() const { return _c.height(); }
 
-private:
+protected:
   Arduino_Canvas_Mono _c;
-  float _speed;    // pixels per ms
-  std::string _text;
 
-  // text block
+private:
+  float _speed;    // pixels per ms
+  const char* _text{NULL};
+  bool _inactive{false};
+
+  // callback function
+  event_cb _cb;
+
+  // full text block dimensions
   int16_t  xx, yy;
   uint16_t ww, hh;
 
   float _xPos;   // current X position
   unsigned long _lastUpdate;
 
-  // 
   /**
    * @brief optimized drawing only visibile chars
    * @note does not work properly with unicode
    * 
    */
-  void _drawVisible();
+  //void _drawVisible();
+
   void _drawall();
 };
 
-class MuiItem_AGFX_TextScroller : public MuiItem_Uncontrollable {
+/**
+ * @brief class wraps text scroller and MuiPP to control positioning and rendering style
+ * 
+ */
+class AGFX_TextScroller : public MuiItem_Uncontrollable, public CanvasTextScroller {
   int16_t _x, _y;
-  float _speed;
   AGFX_text_t _tcfg;
-  CanvasTextScroller _scroller;
 public:
   /**
    * @brief text scroller via ArduinoGFX's canvas
@@ -200,25 +269,25 @@ public:
    * @param speed - speed of scrolling, pixel per second
    * @param tcfg text decoration config
    */
-  MuiItem_AGFX_TextScroller(muiItemId id,
+  AGFX_TextScroller(muiItemId id,
       int16_t x, int16_t y,
       uint16_t w, uint16_t h,
+      const AGFX_text_t& tcfg,
       float speed = 25,
-      const AGFX_text_t& tcfg = {},
       const char* label = NULL)
-        : MuiItem_Uncontrollable(id, label), _scroller(w, h), _x(x), _y(y), _speed(speed), _tcfg(tcfg) {};
+        : MuiItem_Uncontrollable(id, label), CanvasTextScroller(w, h), _x(x), _y(y), _tcfg(tcfg) { setSpeed(speed); };
 
-  MuiItem_AGFX_TextScroller(muiItemId id,
+  AGFX_TextScroller(muiItemId id,
       std::tuple<int16_t, int16_t, uint16_t, uint16_t> dim,
+      const AGFX_text_t& tcfg,
       float speed = 25,
-      const AGFX_text_t& tcfg = {},
       const char* label = NULL)
-        : MuiItem_Uncontrollable(id, label), _scroller(std::get<2>(dim), std::get<3>(dim)), _x(std::get<0>(dim)), _y(std::get<1>(dim)), _speed(speed), _tcfg(tcfg) {};
+        : MuiItem_Uncontrollable(id, label), _x(std::get<0>(dim)), _y(std::get<1>(dim)), CanvasTextScroller(std::get<2>(dim), std::get<3>(dim)), _tcfg(tcfg) { setSpeed(speed); };
 
-  void setText(const char* text, float speed){ _scroller.begin(text, speed, _tcfg.font, _tcfg.font_size); }
-  void setText(const char* text){ _scroller.begin(text, _speed, _tcfg.font, _tcfg.font_size); }
-  void render(const MuiItem* parent, void* r = nullptr) override;
-  bool refresh_req() const override { return _scroller.scroll_pending(); };
+  // begin text scrolling with predefined font settings
+  void begin(const char* text){ CanvasTextScroller::begin(text, _tcfg.font, _tcfg.font_size); };
+  void render(const MuiItem* parent, void* r = nullptr) override { if (scroll()) static_cast<Arduino_GFX*>(r)->drawBitmap(_x, _y, _c.getFramebuffer(), getW(), getH(), _tcfg.color, _tcfg.bgcolor); };
+  bool refresh_req() const override { return scroll_pending(); };
 };
 
 class MuiItem_RangeSlider : public MuiItem {
