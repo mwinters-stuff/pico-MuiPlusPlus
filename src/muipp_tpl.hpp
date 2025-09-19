@@ -148,4 +148,3 @@ T clamp(T value, T min, T max){
 }
 
 } // end of namespace muipp
-#endif

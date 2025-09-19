@@ -22,6 +22,7 @@
 #include "muiplusplus.hpp"
 #include <algorithm>
 #include <cstdio>
+#include <vector>
 
 /*
 void MuiPage::add(MuiItem_pt&& item){
@@ -54,7 +55,11 @@ void MuiPage::removeItem(muiItemId item_id){
     currentItem = items.end();
     itm_selected = false;
   }
-  std::erase_if(items, muipp::MatchID<MuiItem_pt>(item_id));
+  // Replace std::erase_if with remove_if + erase
+  items.erase(
+    std::remove_if(items.begin(), items.end(), muipp::MatchID<MuiItem_pt>(item_id)),
+    items.end()
+  );
 }
 
 
@@ -515,5 +520,9 @@ void MuiPlusPlus::removeItem(muiItemId item_id){
     i.removeItem(item_id);
   }
   // erase the item itself
-  std::erase_if(items, muipp::MatchID<MuiItem_pt>(item_id));
+  // Replace std::erase_if with remove_if + erase
+  items.erase(
+    std::remove_if(items.begin(), items.end(), muipp::MatchID<MuiItem_pt>(item_id)),
+    items.end()
+  );
 }
