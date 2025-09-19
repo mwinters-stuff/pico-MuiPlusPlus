@@ -1,6 +1,30 @@
+/*
+    This file is a part of MuiPlusPlus project
+    https://github.com/vortigont/MuiPlusPlus
+
+    Copyright © 2024-2025 Emil Muratov (vortigont)
+
+    MuiPlusPlus is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    MuiPlusPlus is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with MuiPlusPlus.  If not, see <https://www.gnu.org/licenses/>.
+
+*/
+
+// #if __has_include("U8g2lib.h")
 #include "muipp_u8g2.hpp"
 #include <cstdio>
 #include <u8g2.h> // Use the U8g2 library for Pico SDK
+
+using namespace muipp;
 
 /*
   display a string on multiple text lines, keeping words intact where possible, and accepting \n to force a new line
@@ -69,7 +93,7 @@ u8g2_uint_t Item_U8g2_Generic::getXoffset(u8g2_uint_t x, text_align_t halign, te
 }
 
 
-void MuiItem_U8g2_PageTitle::render(const MuiItem* parent){
+void MuiItem_U8g2_PageTitle::render(const MuiItem* parent, void* r){
   if (_font)
     u8g2_SetFont(&_u8g2, _font);
 
@@ -77,14 +101,14 @@ void MuiItem_U8g2_PageTitle::render(const MuiItem* parent){
   u8g2_DrawUTF8(&_u8g2, a, _y, parent->getName());
 }
 
-void MuiItem_U8g2_StaticText::render(const MuiItem* parent){
+void MuiItem_U8g2_StaticText::render(const MuiItem* parent, void* r){
   if (_font)
     u8g2_SetFont(&_u8g2, _font);
   // print text with word-wrap
   printwords(_u8g2, name, _x, _y);
 }
 
-void MuiItem_U8g2_TextCallBack::render(const MuiItem* parent){
+void MuiItem_U8g2_TextCallBack::render(const MuiItem* parent, void* r){
   if (_font)
     u8g2_SetFont(&_u8g2, _font);
 
@@ -94,7 +118,7 @@ void MuiItem_U8g2_TextCallBack::render(const MuiItem* parent){
 }
 
 
-void MuiItem_U8g2_ActionButton::render(const MuiItem* parent){
+void MuiItem_U8g2_ActionButton::render(const MuiItem* parent, void* r){
   if (_font)
     u8g2_SetFont(&_u8g2, _font);
 
@@ -119,7 +143,7 @@ mui_event MuiItem_U8g2_ActionButton::muiEvent(mui_event e){
 //    for (; it!=end; ++it) { /*...*/ }
 //}
 
-void MuiItem_U8g2_DynamicScrollList::render(const MuiItem* parent){
+void MuiItem_U8g2_DynamicScrollList::render(const MuiItem* parent, void* r){
   // printf("DynScrl print lst of %u items\n", _size_cb());
 
   setCursor(_x, _y);
@@ -192,8 +216,9 @@ mui_event MuiItem_U8g2_DynamicScrollList::muiEvent(mui_event e){
 //  ***
 //  MuiItem_U8g2_CheckBox
 
-void MuiItem_U8g2_CheckBox::render(const MuiItem* parent){
-  setCursor( _x, _y);
+
+void MuiItem_U8g2_CheckBox::render(const MuiItem* parent, void* r){
+  // u8g2_SetCursor(&_u8g2,_x, _y); // TODO?
   if (_font)
     u8g2_SetFont(&_u8g2, _font);
   // specified cursor position will be the bottom reference for the Title text
@@ -236,7 +261,7 @@ mui_event MuiItem_U8g2_CheckBox::muiEvent(mui_event e){
 //  ***
 //  MuiItem_U8g2_ValuesList
 
-void MuiItem_U8g2_ValuesList::render(const MuiItem* parent){
+void MuiItem_U8g2_ValuesList::render(const MuiItem* parent, void* r){
   if (_font)
     u8g2_SetFont(&_u8g2, _font);
 
@@ -286,3 +311,5 @@ mui_event MuiItem_U8g2_ValuesList::muiEvent(mui_event e){
   // by default, return noop
   return {};
 }
+
+// #endif  //  __has_include("U8g2lib.h")

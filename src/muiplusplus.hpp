@@ -1,5 +1,25 @@
-#ifndef MUIPP_HPP
-#define MUIPP_HPP
+/*
+    This file is a part of MuiPlusPlus project
+    https://github.com/vortigont/MuiPlusPlus
+
+    Copyright © 2024-2025 Emil Muratov (vortigont)
+
+    MuiPlusPlus is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    MuiPlusPlus is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with MuiPlusPlus.  If not, see <https://www.gnu.org/licenses/>.
+
+*/
+
+#pragma once
 
 #include <list>
 #include <memory>
@@ -102,6 +122,13 @@ protected:
   const char* name;
   // Item properties struct
   item_opts opt;
+  /**
+   * @brief refresh flag,
+   * to beset internaly/externaly when Item's state changeg and it might be rendered
+   * could be used for selective rendering
+   * 
+   */
+  bool refresh{false};
 
 public:
   // numeric identificator of item
@@ -127,11 +154,11 @@ public:
 
 
   MuiItem(muiItemId id, const char* name = nullptr, item_opts options = item_opts()) : id(id), name(name), opt(options) {};
-  virtual ~MuiItem(){  };// printf("MuiItem d-tor, id:%u\n", id);
+  virtual ~MuiItem(){ /* Serial.printf("MuiItem d-tor, id:%u\n", id); */ };
 
   const char* getName() const { return name; };
 
-  const char* setName(const char* newname) { name = newname; return name; };
+  const char* setName(const char* newname) { name = newname; refresh = true; return name; };
 
   /**
    * @brief returns true if Item can be selected on a page
@@ -161,9 +188,20 @@ public:
   /**
    * @brief render item
    * 
-   * @param page 
+   * @param parent - a pointer to the item's parent object
+   * @param r - rendering engine to use, if any
    */
-  virtual void render(const MuiItem* parent){};
+  virtual void render(const MuiItem* parent, void* r = nullptr){ refresh = false; };
+
+  /**
+   * @brief Item refresh request
+   * poll item if it has it's internal state changed and needs to render a new content
+   * could be used for partial screen refreshes for dynamic items (i.e. gauges, etc...)
+   * 
+   * @return true - if item wants to draw a new content
+   * @return false - if nothing to refresh
+   */
+  virtual bool refresh_req() const { return refresh; }
 };
 
 class MuiItem_Uncontrollable : public MuiItem {
@@ -179,7 +217,6 @@ public:
 
 
 // Item pointer type declaration
-//using MuiItem_pt = std::unique_ptr<MuiItem>;
 using MuiItem_pt = std::shared_ptr<MuiItem>;
 
 
@@ -207,6 +244,13 @@ public:
    * 
    */
   muiItemId autoSelect{0};
+
+  /**
+   * @brief remove item with specified id from the page
+   * 
+   * @param id 
+   */
+  void removeItem(muiItemId item_id);
 
   //using MuiItem::MuiItem;
   //void addMuippItem(muiItemId item_id){ items.push_back(item_id); currentItem = items.begin(); };
@@ -314,7 +358,7 @@ public:
 
   mui_err_t addMuippItem(MuiItem_pt item, muiItemId page_id = 0);
 
-  mui_err_t addMuippItem(MuiItem *item, muiItemId page_id = 0);
+  mui_err_t addMuippItem(MuiItem *item, muiItemId page_id = 0){ return addMuippItem(MuiItem_pt(item), page_id); };
 
   //mui_err_t addMuippItem(MuiItem&& item, muiItemId page_id = 0);//{ addMuippItem( std::make_unique<MuiItem_pt>(std::move(item)), page_id); };
 
@@ -355,11 +399,34 @@ public:
   // before calling render on each items
   //void setPreExec();
 
-  // render menu on screen
-  void render();
+  /**
+   * @brief render menu on screen
+   * runs render call on All items on the active page
+   * @param r - pointer to a rendering engine to pass to each item
+   */
+  void render(void* r = nullptr);
 
-  // after calling render items
-  //void setPostExec();
+  /**
+   * @brief refresh menu
+   * checks all items on page if each needs to refresh itself, runs render call on those
+   * needed refresh. Could be used tp speedup partial screen refresh (if supported)
+   * @param r 
+   * @return returns true if any of the items was refreshed
+   */
+  bool refresh(void* r = nullptr);
+
+  /** 
+   * purge all pages and items
+   */
+  void clear();
+
+  /**
+   * @brief remove item with specified id
+   * will recursevely remove specified item from all the pages
+   * 
+   * @param id 
+   */
+  void removeItem(muiItemId item_id);
 
 // other private methods
 private:

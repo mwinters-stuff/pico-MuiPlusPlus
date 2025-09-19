@@ -1,35 +1,32 @@
-#ifndef MUIPP_U8G2_HPP
-#define MUIPP_U8G2_HPP
+/*
+    This file is a part of MuiPlusPlus project
+    https://github.com/vortigont/MuiPlusPlus
 
+    Copyright © 2024-2025 Emil Muratov (vortigont)
+
+    MuiPlusPlus is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    MuiPlusPlus is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with MuiPlusPlus.  If not, see <https://www.gnu.org/licenses/>.
+
+*/
+
+#pragma once
+#include <string>
 #include <u8g2.h> // Use the U8g2 library for Pico SDK
 #include "muiplusplus.hpp"
 #include <functional>
 #include <string>
 
-
-// callback function that returns index size
-using size_cb_t = std::function< size_t (void)>;
-// callback function that accepts index value
-using index_cb_t = std::function< void (size_t index)>;
-// callback that just returns string
-using string_cb_t = std::function< const char* (void)>;
-// callback function that accepts index and returns const char* string associated with index
-using stringbyindex_cb_t = std::function< const char* (size_t index)>;
-// callback function for constrained numeric
-template <typename T>
-using constrain_val_cb_t = std::function< void (muiItemId id, T value, T min, T max, T step)>;
-// stringifying function, it accepts some object value and returns a srting that identifies the value (i.e. convert int to asci, etc...)
-template <typename T>
-using stringify_cb_t = std::function< std::string (T value)>;
-
-enum class text_align_t {
-  baseline = 0,
-  center,
-  top,
-  bottom,
-  left,
-  right
-};
+#define U8G2 u8g2_t
 
 class Item_U8g2_Generic {
 protected:
@@ -39,9 +36,9 @@ protected:
   u8g2_uint_t _x, _y;
 
   // horizontal alignment relative to cursor position
-  text_align_t h_align;
+  muipp::text_align_t h_align;
   // vertical alignment relative to cursor position
-  text_align_t v_align;
+  muipp::text_align_t v_align;
 
 public:
 
@@ -49,11 +46,10 @@ public:
    * @brief Construct a new MuiItem_U8g2_PageTitle object
    * generic object is NOT selectable!
    * @param u8g2 reference to display object
-   * @param id assigned id for the item
    * @param font use font for printing, if null, then do not switch font
    * @param x, y Coordinates of the top left corner to start printing
    */
-  Item_U8g2_Generic(u8g2_t &u8g2, const uint8_t* font = nullptr, u8g2_uint_t x = 0, u8g2_uint_t y = 0, text_align_t halign = text_align_t::left, text_align_t valign = text_align_t::baseline) : _u8g2(u8g2), _font(font), _x(x), _y(y), h_align(halign), v_align(valign) {};
+  Item_U8g2_Generic(U8G2 &u8g2, const uint8_t* font = nullptr, u8g2_uint_t x = 0, u8g2_uint_t y = 0, muipp::text_align_t halign = muipp::text_align_t::left, muipp::text_align_t valign = muipp::text_align_t::baseline) : _u8g2(u8g2), _font(font), _x(x), _y(y), h_align(halign), v_align(valign) {};
 
   u8g2_uint_t getX() const { return _x; }
 
@@ -63,20 +59,20 @@ public:
   void setCursor( u8g2_uint_t x, u8g2_uint_t  y){ x = _x; _y = y; }
 
   // adjust text alignment
-  void setTextAlignment(text_align_t hAlign, text_align_t vAlign){ h_align = hAlign; v_align = vAlign; }
+  void setTextAlignment(muipp::text_align_t hAlign, muipp::text_align_t vAlign){ h_align = hAlign; v_align = vAlign; }
 
   // same as getXoffset(const char* text), but for arbitrary coordinate and alignmnet
 
   /**
    * @brief calculate adjusted x cursor position
-   * to print provided text acording to text alignment parameters (v_alignm h_align)
+   * where to start printing provided text to satisfy text alignment parameters (v_alignm h_align)
    * (it will also adjust curent FontPos according to valign argument)
    * 
    * @param text 
    * @return u8g2_uint_t - adjusted x position to start printing aligned text from
    * 
    */
-  u8g2_uint_t getXoffset(u8g2_uint_t x, text_align_t halign, text_align_t valign, const char* text);
+  u8g2_uint_t getXoffset(u8g2_uint_t x, muipp::text_align_t halign, muipp::text_align_t valign, const char* text);
 
 
   /**
@@ -87,7 +83,6 @@ public:
    * (it will also adjust curent FontPos according to v_align member value)
    */
   u8g2_uint_t getXoffset(const char* text){ return getXoffset(_x, h_align, v_align, text); };
-
 };
 
 /**
@@ -107,11 +102,11 @@ public:
    */
   MuiItem_U8g2_PageTitle(u8g2_t &u8g2, muiItemId id, const uint8_t* font = nullptr, u8g2_uint_t x = 0, u8g2_uint_t y = 0)
     : Item_U8g2_Generic(u8g2, font, x, y),
-      MuiItem_Uncontrollable(id, nullptr) { v_align = text_align_t::top; };
+      MuiItem_Uncontrollable(id, nullptr) { v_align = muipp::text_align_t::top; };
 
   //~MuiItem_U8g2_PageTitle(){ Serial.println("d-tor PTitle"); }
 
-  void render(const MuiItem* parent) override;
+  void render(const MuiItem* parent, void* r = nullptr) override;
 };
 
 class MuiItem_U8g2_StaticText : public Item_U8g2_Generic, public MuiItem_Uncontrollable {
@@ -128,12 +123,12 @@ public:
     : Item_U8g2_Generic(u8g2, font, x, y),
       MuiItem_Uncontrollable(id, txt) {};
 
-  void render(const MuiItem* parent) override;
+  void render(const MuiItem* parent, void* r = nullptr) override;
 };
 
 
 class MuiItem_U8g2_TextCallBack : public Item_U8g2_Generic, public MuiItem_Uncontrollable {
-  string_cb_t _cb;
+  muipp::string_cb_t _cb;
 public:
   /**
    * @brief Construct a new MuiItem_U8g2_PageTitle object
@@ -143,14 +138,14 @@ public:
    * @param font use font for printing, if null, then do not switch font
    * @param x, y Coordinates of the top left corner to start printing
    */
-  MuiItem_U8g2_TextCallBack(u8g2_t &u8g2, muiItemId id, string_cb_t callback,
+  MuiItem_U8g2_TextCallBack(U8G2 &u8g2, muiItemId id, muipp::string_cb_t callback,
       const uint8_t* font = nullptr, u8g2_uint_t x = 0, u8g2_uint_t y = 0,
-      text_align_t halign = text_align_t::left,
-      text_align_t valign = text_align_t::baseline)
+      muipp::text_align_t halign = muipp::text_align_t::left,
+      muipp::text_align_t valign = muipp::text_align_t::baseline)
         : Item_U8g2_Generic(u8g2, font, x, y),
           MuiItem_Uncontrollable(id), _cb(callback) {};
 
-  void render(const MuiItem* parent) override;
+  void render(const MuiItem* parent, void* r = nullptr) override;
 };
 
 /**
@@ -169,13 +164,13 @@ public:
     mui_event onAction,                                                           // button action
     const char* lbl,                                                              // button label
     const uint8_t* font = nullptr, u8g2_uint_t x = 0, u8g2_uint_t y = 0,          // look and position
-    text_align_t halign = text_align_t::left, text_align_t valign = text_align_t::baseline
+    muipp::text_align_t halign = muipp::text_align_t::left, muipp::text_align_t valign = muipp::text_align_t::baseline
     )
     : Item_U8g2_Generic(u8g2, font, x, y, halign, valign),
       MuiItem(id, lbl, {false, false}), _action(onAction) {};
 
   // render method
-  void render(const MuiItem* parent) override;
+  void render(const MuiItem* parent, void* r = nullptr) override;
 
   // event handler
   mui_event muiEvent(mui_event e) override;
@@ -189,8 +184,8 @@ public:
  */
 class MuiItem_U8g2_BackButton : public MuiItem_U8g2_ActionButton {
 public:
-  MuiItem_U8g2_BackButton(u8g2_t &u8g2, muiItemId id, const char* lbl, const uint8_t* font = nullptr)
-    : MuiItem_U8g2_ActionButton(u8g2, id, {mui_event_t::prevPage}, lbl, font, u8g2_GetDisplayWidth(&u8g2), u8g2_GetDisplayHeight(&u8g2), text_align_t::right, text_align_t::bottom) {};
+  MuiItem_U8g2_BackButton(U8G2 &u8g2, muiItemId id, const char* lbl, const uint8_t* font = nullptr)
+    : MuiItem_U8g2_ActionButton(u8g2, id, {mui_event_t::prevPage}, lbl, font, u8g2_GetDisplayWidth(&u8g2), u8g2_GetDisplayHeight(&u8g2), muipp::text_align_t::right, muipp::text_align_t::bottom) {};
 };
 
 
@@ -219,9 +214,9 @@ struct dynlist_options_t {
  * 
  */
 class MuiItem_U8g2_DynamicScrollList : public Item_U8g2_Generic, public MuiItem {
-  stringbyindex_cb_t _cb;
-  size_cb_t _size_cb;
-  index_cb_t _action;
+  muipp::stringbyindex_cb_t _cb;
+  muipp::size_cb_t _size_cb;
+  muipp::index_cb_t _action;
   int _y_shift, _num_of_rows;
   const uint8_t *_font2;
   // current list index
@@ -244,9 +239,9 @@ public:
    */
   MuiItem_U8g2_DynamicScrollList(u8g2_t &u8g2,
       muiItemId id,
-      stringbyindex_cb_t label_cb,
-      size_cb_t count,
-      index_cb_t action_cb,
+      muipp::stringbyindex_cb_t label_cb,
+      muipp::size_cb_t count,
+      muipp::index_cb_t action_cb,
       int y_shift,
       int num_of_rows = 3,
       u8g2_uint_t x = 0, u8g2_uint_t y = 0,
@@ -262,7 +257,7 @@ public:
   // event handler
   mui_event muiEvent(mui_event e) override;
 
-  void render(const MuiItem* parent) override;
+  void render(const MuiItem* parent, void* r = nullptr) override;
 };
 
 /**
@@ -273,7 +268,7 @@ public:
 class MuiItem_U8g2_CheckBox : public Item_U8g2_Generic, public MuiItem {
   // checkbox value
   bool _v;
-  index_cb_t _action;
+  muipp::index_cb_t _action;
 public:
   /**
    * @brief Construct a new MuiItem_U8g2_PageTitle object
@@ -283,12 +278,12 @@ public:
    * @param font use font for printing, if null, then do not switch font
    * @param x, y Coordinates of the top left corner to start printing
    */
-  MuiItem_U8g2_CheckBox(u8g2_t &u8g2, muiItemId id, const char* label, bool value, index_cb_t action_cb = nullptr, const uint8_t* font = nullptr, u8g2_uint_t x = 0, u8g2_uint_t y = 0)
+  MuiItem_U8g2_CheckBox(U8G2 &u8g2, muiItemId id, const char* label, bool value, muipp::index_cb_t action_cb = nullptr, const uint8_t* font = nullptr, u8g2_uint_t x = 0, u8g2_uint_t y = 0)
     : Item_U8g2_Generic(u8g2, font, x, y),
       MuiItem(id, label, {false, false}),_v(value), _action(action_cb){}
 
   // render method
-  void render(const MuiItem* parent) override;
+  void render(const MuiItem* parent, void* r = nullptr) override;
   // event handler
   mui_event muiEvent(mui_event e) override;
 };
@@ -300,10 +295,10 @@ class MuiItem_U8g2_NumberHSlide : public Item_U8g2_Generic, public MuiItem {
   //const char* _format;
   T& _v;
   T _minv, _maxv, _step;
-  stringify_cb_t<T>     _mkstring;
-  constrain_val_cb_t<T> _onSelect;
-  constrain_val_cb_t<T> _onDeSelect;
-  constrain_val_cb_t<T> _onChange;
+  muipp::stringify_cb_t<T>     _mkstring;
+  muipp::constrain_val_cb_t<T> _onSelect;
+  muipp::constrain_val_cb_t<T> _onDeSelect;
+  muipp::constrain_val_cb_t<T> _onChange;
   const uint8_t* _font2;   // font for minor values
   u8g2_uint_t _offset;
 
@@ -334,10 +329,10 @@ public:
     const char* label,
     T& value,
     T min, T max, T step,
-    stringify_cb_t<T> makeString = nullptr,
-    constrain_val_cb_t<T> onSelect = nullptr,
-    constrain_val_cb_t<T> onDeSelect = nullptr,
-    constrain_val_cb_t<T> onChange = nullptr,
+    muipp::stringify_cb_t<T> makeString = nullptr,
+    muipp::constrain_val_cb_t<T> onSelect = nullptr,
+    muipp::constrain_val_cb_t<T> onDeSelect = nullptr,
+    muipp::constrain_val_cb_t<T> onChange = nullptr,
     const uint8_t* font1 = nullptr,
     const uint8_t* font2 = nullptr,
     u8g2_uint_t x = 0, u8g2_uint_t y = 0, u8g2_uint_t offset = 20)
@@ -350,7 +345,7 @@ public:
   //~MuiItem_U8g2_NumberHSlide(){ Serial.println("d-tor HSlide"); }
 
   // render method
-  void render(const MuiItem* parent) override;
+  void render(const MuiItem* parent, void* r = nullptr) override;
   // event handler
   mui_event muiEvent(mui_event e) override;
 };
@@ -358,13 +353,13 @@ public:
 
 class MuiItem_U8g2_ValuesList : public Item_U8g2_Generic, public MuiItem {
   // callbacks
-  string_cb_t _getCurrent;
+  muipp::string_cb_t _getCurrent;
   std::function< void (void)> _onNext;
   std::function< void (void)> _onPrev;
   // cursor x position for value 
   u8g2_uint_t _xval;
   // value horizontal alignment
-  text_align_t _val_halign;
+  muipp::text_align_t _val_halign;
 
 public:
 
@@ -372,20 +367,20 @@ public:
     u8g2_t &u8g2,
     muiItemId id,
     const char* label,
-    string_cb_t getCurrent,
+    muipp::string_cb_t getCurrent,
     std::function< void (void)> onNext,
     std::function< void (void)> onPrevious,
     u8g2_uint_t xlbl, u8g2_uint_t xval,
     u8g2_uint_t y,
     const uint8_t* font = nullptr,
-    text_align_t lbl = text_align_t::left,
-    text_align_t val_halign = text_align_t::left,
-    text_align_t valign = text_align_t::baseline
+    muipp::text_align_t lbl = muipp::text_align_t::left,
+    muipp::text_align_t val_halign = muipp::text_align_t::left,
+    muipp::text_align_t valign = muipp::text_align_t::baseline
   ) : Item_U8g2_Generic(u8g2, font, xlbl, y, lbl, valign),
       MuiItem(id, label), _getCurrent(getCurrent), _onNext(onNext), _onPrev(onPrevious), _xval(xval), _val_halign(val_halign) {}
 
   // render method
-  void render(const MuiItem* parent) override;
+  void render(const MuiItem* parent, void* r = nullptr) override;
   // event handler
   mui_event muiEvent(mui_event e) override;
 };
@@ -396,7 +391,7 @@ public:
 
 // ***********************************
 template <typename T>
-void MuiItem_U8g2_NumberHSlide<T>::render(const MuiItem* parent){
+void MuiItem_U8g2_NumberHSlide<T>::render(const MuiItem* parent, void* r){
   u8g2_SetFontPosCenter(&_u8g2);
   std::string val_str(_mkstring ? _mkstring(_v) : std::to_string(_v) );
   if (_font)
@@ -463,4 +458,3 @@ mui_event MuiItem_U8g2_NumberHSlide<T>::muiEvent(mui_event e){
   // no-op
   return {};
 }
-#endif
