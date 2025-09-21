@@ -5,16 +5,17 @@
 #include "u8g2.h"
 #include "muiplusplus.hpp"
 #include "muipp_u8g2.hpp"
+#include "muipp_tpl.hpp"
 #include "pico/multicore.h"
 #include <Versatile_RotaryEncoder.h>
 #include "u8g2functions.h"
 
 // Define GPIOs for rotary encoder and buttons
-#define clk 20
-#define dt 21
-#define sw 14
+#define ROTARY_clk 20
+#define ROTARY_dt 21
+#define ROTARY_sw 19
 
-Versatile_RotaryEncoder encoder = Versatile_RotaryEncoder(clk, dt, sw);
+Versatile_RotaryEncoder encoder = Versatile_RotaryEncoder(ROTARY_clk, ROTARY_dt, ROTARY_sw);
 
 // Define RST pin for display
 #define SH1107_RST_PIN GPIO_PIN_7
@@ -157,7 +158,8 @@ int main()
 
     // Initialize u8g2 display
     // u8g2_Setup_sh1107_64x128_f(&u8g2, U8G2_R1, u8x8_byte_hw_i2c, u8x8_gpio_and_delay_raspberrypi_pico);
-    u8g2_Setup_ssd1306_i2c_128x64_noname_f(&u8g2, U8G2_R0, u8x8_byte_hw_i2c, u8x8_gpio_and_delay_hw_i2c);
+    //u8g2_Setup_ssd1306_i2c_128x64_noname_f(&u8g2, U8G2_R0, u8x8_byte_hw_i2c, u8x8_gpio_and_delay_hw_i2c);
+    u8g2_Setup_sh1106_i2c_128x64_noname_f(&u8g2, U8G2_R0, u8x8_byte_hw_i2c, u8x8_gpio_and_delay_hw_i2c);
     u8g2_InitDisplay(&u8g2);
     u8g2_SetPowerSave(&u8g2, 0);
     u8g2_SendBuffer(&u8g2);
@@ -223,8 +225,8 @@ void setup_menu()
         SMALL_TEXT_FONT,
         u8g2_GetDisplayWidth(&u8g2) / 2,
         u8g2_GetDisplayHeight(&u8g2) / 2,
-        text_align_t::center,
-        text_align_t::bottom);
+        muipp::text_align_t::center,
+        muipp::text_align_t::bottom);
     muiplus.addMuippItem(quitbtn, root_page);
 
     muiplus.addMuippItem(

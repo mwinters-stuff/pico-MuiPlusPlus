@@ -25,9 +25,9 @@
 
 
 // rotatry encoder pins
-#define clk 20
-#define dt 21
-#define sw 14
+#define ROTARY_clk 20
+#define ROTARY_dt 21
+#define ROTARY_sw 19
 
 // let's select some fonts for our Menu
 #define MAIN_MENU_FONT              u8g2_font_bauhaus2015_tr
@@ -43,8 +43,9 @@ const char* quitmenu = "menu closed";
 
 const char* stub_text = anyk;
 
-DisplayControls::DisplayControls(): encoder(clk, dt, sw) {
-  u8g2_Setup_ssd1306_i2c_128x64_noname_f(&u8g2, U8G2_R0, u8x8_byte_hw_i2c, u8x8_gpio_and_delay_hw_i2c);
+DisplayControls::DisplayControls(): encoder(ROTARY_clk, ROTARY_dt, ROTARY_sw) {
+  // u8g2_Setup_ssd1306_i2c_128x64_noname_f(&u8g2, U8G2_R0, u8x8_byte_hw_i2c, u8x8_gpio_and_delay_hw_i2c);
+  u8g2_Setup_sh1106_i2c_128x64_noname_f(&u8g2, U8G2_R0, u8x8_byte_hw_i2c, u8x8_gpio_and_delay_hw_i2c);
 };
 
   void DisplayControls::handleRotate(int8_t rotation) {
