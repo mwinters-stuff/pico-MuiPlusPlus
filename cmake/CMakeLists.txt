@@ -3,7 +3,7 @@ cmake_minimum_required(VERSION 3.28)
 add_library(MuiPlusPlus
         ../src/muiplusplus.cpp
         ../src/muipp_u8g2.cpp
-        ../src/muipp_tpl.cpp
+        ../src/muipp_tlp.cpp
 )
 
 target_compile_definitions(MuiPlusPlus
