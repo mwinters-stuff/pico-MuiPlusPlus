@@ -22,6 +22,7 @@
 #pragma once
 #include <functional>
 #include <string_view>
+#include <cstdint>
 
 using muiItemId = uint32_t;
 
